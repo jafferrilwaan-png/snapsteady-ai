@@ -16,19 +16,7 @@ export function CinematicFooter() {
   };
 
   return (
-    <footer className="relative w-full border-t border-white/10 pt-16 pb-12 overflow-hidden text-neutral-200">
-      {/* Living Artwork Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div
-          style={{
-            backgroundImage: `url('/bg-art.png')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center bottom'
-          }}
-          className="w-full h-full opacity-60"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
-      </div>
+    <footer className="relative w-full border-t border-white/10 pt-16 pb-12 overflow-hidden text-neutral-200 z-10">
 
       {/* Marquee Ticker */}
       <div className="relative z-10 w-full overflow-hidden border-y border-white/10 bg-black/50 backdrop-blur-xl py-3.5 mb-14">

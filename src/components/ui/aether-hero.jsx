@@ -13,24 +13,9 @@ export function AetherHero({
 }) {
   return (
     <section
-      className={`relative min-h-[92vh] w-full overflow-hidden flex flex-col justify-between ${className}`}
+      className={`relative min-h-[90vh] w-full flex flex-col justify-between ${className}`}
       aria-label="Hero"
     >
-      {/* 1. VISIBLE ARTWORK BACKGROUND (Crisp, Rich & Unblurred Across Page) */}
-      <div className="absolute inset-0 z-0">
-        <div
-          style={{
-            backgroundImage: `url('/bg-art.png')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
-          className="w-full h-full animate-art-bg opacity-85"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-[#070e1c] pointer-events-none" />
-      </div>
-
-      {/* 2. Transparent Floating Cloud Shader Layer */}
-      <CloudShader className="absolute inset-0 w-full h-full z-10 opacity-50 pointer-events-none" />
 
       {/* 3. Ultra-Clean Minimalist Navbar matching Reference Style */}
       <header className="relative z-30 w-full px-4 sm:px-8 pt-4">

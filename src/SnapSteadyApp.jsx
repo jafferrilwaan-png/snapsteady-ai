@@ -5,6 +5,7 @@ import { PhoneExperience } from './components/ui/PhoneExperience';
 import { AISlideDeck } from './components/ui/AISlideDeck';
 import { CinematicFooter } from './components/ui/motion-footer';
 import { CloudShader } from './components/ui/cloud-shader';
+import bgArt from './assets/bg-art.png';
 
 const INITIAL_SLIDES = [
   {
@@ -41,9 +42,23 @@ export default function SnapSteadyApp() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#070e1c] text-white flex flex-col font-sans overflow-x-hidden selection:bg-[#FFD600]/30 selection:text-[#FFD600] relative">
+    <div className="min-h-screen w-full text-white flex flex-col font-sans overflow-x-hidden selection:bg-[#FFD600]/30 selection:text-[#FFD600] relative bg-[#070b14]">
       
-      {/* 1. HERO SECTION: AetherHero with Prominent Visible Artwork & Glassmorphism */}
+      {/* GLOBAL FULL-PAGE CRISP VIBRANT LIVING ARTWORK BACKGROUND (100% Visible & Bright) */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <img
+          src={bgArt}
+          alt="Living Background Art"
+          className="w-full h-full object-cover object-center animate-art-bg opacity-90 scale-105"
+        />
+        {/* Subtle luminous glass tint - NO black wash out */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+      </div>
+
+      {/* Ambient Drifting Transparent Cloud Shader */}
+      <CloudShader className="fixed inset-0 w-full h-full opacity-35 z-0 pointer-events-none" />
+
+      {/* 1. HERO SECTION */}
       <AetherHero
         title="Give your big idea the vision it deserves."
         subtitle="SnapSteady AI — Flagship On-Device Vision Intelligence & Zero-Shake Optical Gyro Lock for the iQOO Hackathon."
@@ -53,23 +68,9 @@ export default function SnapSteadyApp() {
         secondaryCtaHref="https://github.com/jafferrilwaan-png/snapsteady-ai"
       />
 
-      {/* 2. DEDICATED PHONE SECTION: Visible Crisp Living Artwork Background & Glassmorphic Title */}
-      <section className="relative w-full py-20 px-4 flex flex-col items-center overflow-hidden" id="experience">
-        {/* Living Artwork Background (Visible, Rich, Unblurred) */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <div
-            style={{
-              backgroundImage: `url('/bg-art.png')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-            className="w-full h-full animate-art-bg opacity-75"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#070e1c]/60 via-[#050810]/40 to-[#04070e]/90" />
-        </div>
+      {/* 2. DEDICATED PHONE SECTION */}
+      <section className="relative w-full py-16 px-4 flex flex-col items-center z-10" id="experience">
 
-        {/* Ambient Cloud Shader Over Artwork */}
-        <CloudShader className="absolute inset-0 w-full h-full opacity-40 z-0 pointer-events-none" />
 
         <ContainerScroll
           titleComponent={
