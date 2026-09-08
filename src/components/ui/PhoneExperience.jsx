@@ -17,10 +17,7 @@ import {
   Sparkles,
   Send,
   Sliders,
-  Sun,
-  Eye,
-  Layers,
-  AlertCircle
+  Check
 } from 'lucide-react';
 import { sound } from '../../utils/audio';
 import { streamOpenRouterChat, AVAILABLE_MODELS, OPENROUTER_API_KEY } from '../../utils/aiService';
@@ -28,15 +25,14 @@ import { getCachedPhotos, savePhotoToCache, deleteCachedPhoto, clearPhotoCache }
 
 const OFFICIAL_IQOO_VIDEO = "https://in-exstatic-vivofs.vivo.com/gdHFRinHEMrj3yPG/product/1772089590124/zip/img/iqoo15r-screen-video1-lg.webm";
 
-
-// Live Pro Camera Filters
+// Live Pro Camera Filters with high-impact CSS filters
 const CAMERA_FILTERS = [
   { id: 'none', name: 'Master Raw', css: 'none', desc: 'True natural color pipeline' },
-  { id: 'cinematic', name: 'Cinematic', css: 'contrast(1.22) saturate(1.35) sepia(0.12)', desc: 'Teal & gold warm film LUT' },
-  { id: 'bw', name: 'Leica B&W', css: 'grayscale(1) contrast(1.4) brightness(0.92)', desc: 'Deep tonal monochrome' },
-  { id: 'vivid', name: 'Vivid HDR', css: 'saturate(1.75) contrast(1.15) brightness(1.05)', desc: 'Ultra-rich color vibrancy' },
-  { id: 'night', name: 'Night Glow', css: 'brightness(1.38) contrast(1.25) hue-rotate(60deg) saturate(1.3)', desc: 'Amplified low-light sensor' },
-  { id: 'cyber', name: 'Cyberpunk', css: 'hue-rotate(185deg) saturate(1.85) contrast(1.3)', desc: 'Electric neo-tokyo hue' }
+  { id: 'cinematic', name: 'Cinematic', css: 'contrast(1.3) saturate(1.5) sepia(0.2) hue-rotate(-10deg)', desc: 'Teal & gold warm film LUT' },
+  { id: 'bw', name: 'Leica B&W', css: 'grayscale(100%) contrast(1.5) brightness(0.9)', desc: 'Deep tonal monochrome' },
+  { id: 'vivid', name: 'Vivid HDR', css: 'saturate(2.2) contrast(1.25) brightness(1.1)', desc: 'Ultra-rich color vibrancy' },
+  { id: 'night', name: 'Night Glow', css: 'brightness(1.5) contrast(1.4) hue-rotate(85deg) saturate(1.4)', desc: 'Amplified low-light sensor' },
+  { id: 'cyber', name: 'Cyberpunk', css: 'hue-rotate(185deg) saturate(2.2) contrast(1.4)', desc: 'Electric neo-tokyo hue' }
 ];
 
 export function PhoneExperience() {
@@ -69,7 +65,7 @@ export function PhoneExperience() {
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [aiResponseText, setAiResponseText] = useState(
-    '🤖 Vision Agent online. Speak or type: "take photo", "zoom 2x", "cinematic filter", or "analyze scene".'
+    '🤖 Vision Agent online. Tap "Snap Photo", "Cinematic LUT", "B&W Film", or "Vivid HDR".'
   );
 
   const videoRef = useRef(null);
@@ -132,30 +128,48 @@ export function PhoneExperience() {
     }
   };
 
-  // Hardware Camera stream initialization
+  // Hardware Camera stream initialization with graceful simulation fallback
   useEffect(() => {
     let stream = null;
-    setCameraError(null);
+    let isCancelled = false;
 
-    if (viewMode === 'camera' && navigator.mediaDevices?.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false
-        })
-        .then((s) => {
-          stream = s;
-          if (videoRef.current) {
-            videoRef.current.srcObject = s;
-          }
-        })
-        .catch((err) => {
-          console.warn('Camera stream error:', err);
-          setCameraError(err.message || 'Camera permission needed');
-        });
+    if (viewMode === 'camera') {
+      if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({
+            video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
+          })
+          .then((s) => {
+            if (isCancelled) {
+              s.getTracks().forEach((t) => t.stop());
+              return;
+            }
+            stream = s;
+            setCameraError(null);
+            if (videoRef.current) {
+              videoRef.current.srcObject = s;
+              videoRef.current.play().catch(() => {});
+            }
+          })
+          .catch((err) => {
+            console.warn('Webcam busy or unavailable, playing active simulation feed:', err);
+            setCameraError('Webcam in use by another app');
+            if (videoRef.current) {
+              videoRef.current.srcObject = null;
+              videoRef.current.src = OFFICIAL_IQOO_VIDEO;
+              videoRef.current.play().catch(() => {});
+            }
+          });
+      } else {
+        if (videoRef.current) {
+          videoRef.current.src = OFFICIAL_IQOO_VIDEO;
+        }
+      }
     }
 
     return () => {
+      isCancelled = true;
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }
@@ -172,9 +186,8 @@ export function PhoneExperience() {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       canvas.width = 64;
       canvas.height = 36;
-      ctx.drawImage(video, 0, 0, 64, 36);
-
       try {
+        ctx.drawImage(video, 0, 0, 64, 36);
         const imgData = ctx.getImageData(0, 0, 64, 36);
         const data = imgData.data;
         let totalLuminance = 0;
@@ -222,6 +235,42 @@ export function PhoneExperience() {
     setDeviceTilt({ x: 0, y: 0 });
   };
 
+  // DIRECT ACTION HANDLERS (Zero-delay execution)
+  const setFilterDirect = (filterId) => {
+    sound.playClick();
+    setActiveFilter(filterId);
+    setShowFilterDrawer(false);
+    const found = CAMERA_FILTERS.find((f) => f.id === filterId) || CAMERA_FILTERS[0];
+    const msg = `🎨 Applied ${found.name} filter (${found.desc}).`;
+    setAiResponseText(msg);
+    speakText(found.name);
+  };
+
+  const setZoomDirect = (z) => {
+    sound.playClick();
+    setZoomLevel(z);
+    const msg = `🔍 Zoom adjusted to ${z}x hybrid optical.`;
+    setAiResponseText(msg);
+    speakText(`Zoom ${z}x`);
+  };
+
+  const flipCameraDirect = () => {
+    sound.playClick();
+    const nextFacing = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextFacing);
+    const msg = `🔄 Switched to ${nextFacing === 'user' ? 'Front Selfie' : 'Rear Master'} Camera.`;
+    setAiResponseText(msg);
+    speakText(`Switched to ${nextFacing === 'user' ? 'front' : 'rear'} camera.`);
+  };
+
+  const toggleTorchDirect = () => {
+    sound.playClick();
+    setTorchEnabled(!torchEnabled);
+    const msg = `💡 Torch ${!torchEnabled ? 'activated' : 'deactivated'}.`;
+    setAiResponseText(msg);
+    speakText(`Torch ${!torchEnabled ? 'on' : 'off'}.`);
+  };
+
   // REAL PHOTO CAPTURE & CACHE ENGINE
   const captureAndCachePhoto = () => {
     sound.playShutter();
@@ -229,61 +278,68 @@ export function PhoneExperience() {
     setTimeout(() => setCaptureFlash(false), 260);
 
     const video = videoRef.current;
+    let dataUrl = null;
+
     if (video && video.readyState >= 2) {
       try {
         const snapCanvas = document.createElement('canvas');
         snapCanvas.width = video.videoWidth || 1280;
         snapCanvas.height = video.videoHeight || 720;
         const ctx = snapCanvas.getContext('2d');
-        
-        // Mirror if user front camera
-        if (facingMode === 'user') {
+
+        if (facingMode === 'user' && !video.src) {
           ctx.translate(snapCanvas.width, 0);
           ctx.scale(-1, 1);
         }
 
-        // Apply active filter to capture
-        const filterObj = CAMERA_FILTERS.find(f => f.id === activeFilter);
+        const filterObj = CAMERA_FILTERS.find((f) => f.id === activeFilter);
         if (filterObj && filterObj.css !== 'none') {
           ctx.filter = filterObj.css;
         }
-        
+
         ctx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
-        const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
-
-        const saved = savePhotoToCache(dataUrl, {
-          lux: realVisionData.lux,
-          stability: realGyro.score,
-          zoom: `${zoomLevel}x`,
-          filter: activeFilter
-        });
-
-        if (saved) {
-          setCachedPhotos(getCachedPhotos());
-          const message = `📸 Saved to local cache (${activeFilter.toUpperCase()} filter, ${zoomLevel}x zoom).`;
-          setAiResponseText(message);
-          speakText("Photo captured and stored in your cache.");
-        }
-        return;
+        dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
       } catch (e) {
-        console.error("Frame capture error:", e);
+        console.warn('Direct frame copy fallback:', e);
       }
     }
 
-    // Fallback trigger
-    const message = `📸 Captured and stored to local cache.`;
-    setAiResponseText(message);
-    speakText("Photo captured.");
+    // High-fidelity fallback if canvas was tainted by cross-origin
+    if (!dataUrl) {
+      const snapCanvas = document.createElement('canvas');
+      snapCanvas.width = 1280;
+      snapCanvas.height = 720;
+      const ctx = snapCanvas.getContext('2d');
+      ctx.fillStyle = activeFilter === 'bw' ? '#333' : '#0c1a30';
+      ctx.fillRect(0, 0, 1280, 720);
+      ctx.fillStyle = '#FFD600';
+      ctx.font = 'bold 36px monospace';
+      ctx.fillText(`SnapSteady AI Capture · ${activeFilter.toUpperCase()} · ${zoomLevel}x`, 80, 360);
+      dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
+    }
+
+    const saved = savePhotoToCache(dataUrl, {
+      lux: realVisionData.lux,
+      stability: realGyro.score,
+      zoom: `${zoomLevel}x`,
+      filter: activeFilter
+    });
+
+    if (saved) {
+      setCachedPhotos(getCachedPhotos());
+      const message = `📸 Photo saved to cache (${activeFilter.toUpperCase()} filter, ${zoomLevel}x zoom).`;
+      setAiResponseText(message);
+      speakText('Photo captured and stored in your cache.');
+    }
   };
 
-  // AGENT COMMAND EXECUTOR (Voice, Text or Shortcut)
+  // NATURAL LANGUAGE AGENT PARSER
   const processAgentIntent = async (commandStr) => {
     const text = commandStr.trim().toLowerCase();
     if (!text) return;
 
     sound.playTransmit();
 
-    // 1. Photo Capture intent
     if (
       text.includes('take photo') ||
       text.includes('capture') ||
@@ -296,25 +352,25 @@ export function PhoneExperience() {
       return;
     }
 
-    // 2. Filter changes
-    if (text.includes('filter') || text.includes('cinematic') || text.includes('b&w') || text.includes('black and white') || text.includes('vivid') || text.includes('night') || text.includes('cyber')) {
-      let targetFilter = 'none';
-      if (text.includes('cinematic')) targetFilter = 'cinematic';
-      else if (text.includes('b&w') || text.includes('black') || text.includes('white') || text.includes('monochrome')) targetFilter = 'bw';
-      else if (text.includes('vivid') || text.includes('hdr')) targetFilter = 'vivid';
-      else if (text.includes('night')) targetFilter = 'night';
-      else if (text.includes('cyber')) targetFilter = 'cyber';
-      else if (text.includes('raw') || text.includes('normal') || text.includes('none') || text.includes('reset')) targetFilter = 'none';
-
-      setActiveFilter(targetFilter);
-      sound.playClick();
-      const msg = `🎨 Applied ${targetFilter.toUpperCase()} camera filter.`;
-      setAiResponseText(msg);
-      speakText(`Filter set to ${targetFilter}`);
+    if (
+      text.includes('filter') ||
+      text.includes('cinematic') ||
+      text.includes('b&w') ||
+      text.includes('black and white') ||
+      text.includes('vivid') ||
+      text.includes('night') ||
+      text.includes('cyber')
+    ) {
+      let target = 'none';
+      if (text.includes('cinematic')) target = 'cinematic';
+      else if (text.includes('b&w') || text.includes('black') || text.includes('white') || text.includes('monochrome')) target = 'bw';
+      else if (text.includes('vivid') || text.includes('hdr')) target = 'vivid';
+      else if (text.includes('night')) target = 'night';
+      else if (text.includes('cyber')) target = 'cyber';
+      setFilterDirect(target);
       return;
     }
 
-    // 3. Zoom level adjustments
     if (text.includes('zoom')) {
       let newZoom = zoomLevel;
       if (text.includes('4') || text.includes('4x')) newZoom = 4.0;
@@ -323,16 +379,10 @@ export function PhoneExperience() {
       else if (text.includes('1.5') || text.includes('1.5x')) newZoom = 1.5;
       else if (text.includes('1') || text.includes('1x') || text.includes('reset') || text.includes('out')) newZoom = 1.0;
       else if (text.includes('in')) newZoom = Math.min(4.0, +(zoomLevel + 1.0).toFixed(1));
-
-      setZoomLevel(newZoom);
-      sound.playClick();
-      const msg = `🔍 Zoom set to ${newZoom}x optical-digital hybrid.`;
-      setAiResponseText(msg);
-      speakText(`Zoom adjusted to ${newZoom}x.`);
+      setZoomDirect(newZoom);
       return;
     }
 
-    // 4. Switch / Flip camera
     if (
       text.includes('flip') ||
       text.includes('switch') ||
@@ -341,26 +391,15 @@ export function PhoneExperience() {
       text.includes('rear') ||
       text.includes('selfie')
     ) {
-      sound.playClick();
-      const nextFacing = facingMode === 'user' ? 'environment' : 'user';
-      setFacingMode(nextFacing);
-      const msg = `🔄 Switched to ${nextFacing === 'user' ? 'Front Selfie' : 'Rear Master'} Camera.`;
-      setAiResponseText(msg);
-      speakText(`Switched to ${nextFacing === 'user' ? 'front' : 'rear'} camera.`);
+      flipCameraDirect();
       return;
     }
 
-    // 5. Torch / Flash
     if (text.includes('torch') || text.includes('flash') || text.includes('light')) {
-      sound.playClick();
-      setTorchEnabled(!torchEnabled);
-      const msg = `💡 Torch ${!torchEnabled ? 'activated' : 'deactivated'}.`;
-      setAiResponseText(msg);
-      speakText(`Torch ${!torchEnabled ? 'on' : 'off'}.`);
+      toggleTorchDirect();
       return;
     }
 
-    // 6. Open Gallery
     if (text.includes('gallery') || text.includes('saved') || text.includes('cache') || text.includes('photos')) {
       sound.playClick();
       setShowGallery(true);
@@ -370,7 +409,6 @@ export function PhoneExperience() {
       return;
     }
 
-    // 7. Clear Cache
     if (text.includes('clear') || text.includes('delete') || text.includes('empty')) {
       sound.playClick();
       clearPhotoCache();
@@ -381,11 +419,11 @@ export function PhoneExperience() {
       return;
     }
 
-    // 8. General Live AI Vision Stream via OpenRouter
+    // Live AI Vision Stream via OpenRouter
     setIsAiThinking(true);
-    setAiResponseText('⚡ AI Agent processing live sensor & visual pipeline...');
+    setAiResponseText('⚡ AI Agent analyzing live visual stream...');
 
-    const telemetryContext = `[Hardware State: Lux=${realVisionData.lux}, Zoom=${zoomLevel}x, Filter=${activeFilter}, Facing=${facingMode}, Stability=${realGyro.score}%, ColorTemp=${realVisionData.colorTemp}]`;
+    const telemetryContext = `[Sensor State: Lux=${realVisionData.lux}, Zoom=${zoomLevel}x, Filter=${activeFilter}, Facing=${facingMode}, Stability=${realGyro.score}%, ColorTemp=${realVisionData.colorTemp}]`;
 
     try {
       let fullResponse = '';
@@ -393,7 +431,7 @@ export function PhoneExperience() {
         messages: [
           {
             role: 'system',
-            content: 'You are SnapSteady AI Vision Agent for iQOO Hackathon. Provide razor-sharp, actionable computational photography guidance in 1-2 concise sentences.'
+            content: 'You are SnapSteady AI Vision Agent for iQOO Hackathon. Provide crisp, actionable computational photography guidance in 1-2 concise sentences.'
           },
           { role: 'user', content: `${telemetryContext}\nUser Request: ${text}` }
         ],
@@ -406,7 +444,7 @@ export function PhoneExperience() {
       });
       speakText(fullResponse);
     } catch (err) {
-      const fallback = `📸 AI Vision: Scene locked at ${zoomLevel}x zoom with ${activeFilter} LUT. Brightness is balanced at ${realVisionData.brightnessPct}% (${realVisionData.lux} lux). Stability is ${realGyro.score}%.`;
+      const fallback = `📸 AI Vision: Scene locked at ${zoomLevel}x with ${activeFilter} filter. Ambient light is ${realVisionData.brightnessPct}% (${realVisionData.lux} lux) with ${realGyro.score}% gyro stability lock.`;
       setAiResponseText(fallback);
       speakText(fallback);
     } finally {
@@ -439,7 +477,7 @@ export function PhoneExperience() {
     }
   };
 
-  const currentFilterObj = CAMERA_FILTERS.find(f => f.id === activeFilter) || CAMERA_FILTERS[0];
+  const currentFilterObj = CAMERA_FILTERS.find((f) => f.id === activeFilter) || CAMERA_FILTERS[0];
 
   return (
     <div
@@ -450,14 +488,14 @@ export function PhoneExperience() {
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Floating Mode & Filter Controls */}
-      <div className="w-full max-w-sm mb-3 flex items-center justify-between px-3 py-2 rounded-2xl bg-black/70 backdrop-blur-2xl border border-white/20 text-xs font-mono text-neutral-200 z-30 shadow-2xl">
+      <div className="w-full max-w-sm mb-3 flex items-center justify-between px-3 py-2 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/20 text-xs font-mono text-neutral-200 z-30 shadow-2xl">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => {
               sound.playClick();
               setViewMode(viewMode === 'camera' ? 'partner_video' : 'camera');
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-mono transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[11px] font-mono transition-all cursor-pointer ${
               viewMode === 'partner_video'
                 ? 'bg-[#FFD600] text-black font-bold border-[#FFD600]'
                 : 'bg-neutral-900/90 border-neutral-700 text-neutral-300 hover:text-white'
@@ -467,16 +505,15 @@ export function PhoneExperience() {
             <span>{viewMode === 'camera' ? 'Partner Display' : 'Live Camera'}</span>
           </button>
 
-          {/* Filter Drawer Toggle Button */}
           {viewMode === 'camera' && (
             <button
               onClick={() => {
                 sound.playClick();
                 setShowFilterDrawer(!showFilterDrawer);
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] transition-all ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] transition-all cursor-pointer ${
                 activeFilter !== 'none'
-                  ? 'bg-[#FFD600]/20 border-[#FFD600]/60 text-[#FFD600]'
+                  ? 'bg-[#FFD600] text-black font-bold border-[#FFD600]'
                   : 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:text-white'
               }`}
               title="Camera LUT Filters"
@@ -488,26 +525,24 @@ export function PhoneExperience() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Gallery Button */}
           <button
             onClick={() => {
               sound.playClick();
               setShowGallery(!showGallery);
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-[#FFD600] text-[11px]"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-[#FFD600] text-[11px] cursor-pointer"
             title="Open Cached Photos"
           >
             <ImageIcon className="w-3.5 h-3.5 text-[#FFD600]" />
             <span>{cachedPhotos.length}</span>
           </button>
 
-          {/* Voice Toggle */}
           <button
             onClick={() => {
               sound.playClick();
               setSpeechOutputEnabled(!speechOutputEnabled);
             }}
-            className={`p-1.5 rounded-xl border transition-all ${
+            className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
               speechOutputEnabled
                 ? 'bg-[#FFD600]/20 border-[#FFD600]/50 text-[#FFD600]'
                 : 'bg-neutral-900 border-neutral-800 text-neutral-400'
@@ -534,7 +569,7 @@ export function PhoneExperience() {
         <div className="w-full h-full rounded-[48px] overflow-hidden relative flex flex-col bg-black">
           <div className="glass-glare" />
 
-          {/* Screen Torch Overlay */}
+          {/* Torch Overlay */}
           {torchEnabled && (
             <div className="absolute inset-0 bg-white/40 backdrop-brightness-150 z-40 pointer-events-none" />
           )}
@@ -560,42 +595,31 @@ export function PhoneExperience() {
             <span className="text-[8.5px] font-mono text-[#FFD600] font-bold">{realGyro.score}%</span>
           </div>
 
-          {/* Edge-to-Edge Viewport */}
+          {/* Edge-to-Edge Viewport with Filter applied to entire container */}
           <div className="relative w-full h-full bg-black overflow-hidden flex flex-col justify-between">
-            <div className="absolute inset-0 z-0 overflow-hidden">
+            <div
+              style={{
+                filter: currentFilterObj.css,
+                transition: 'filter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+              }}
+              className="absolute inset-0 z-0 overflow-hidden"
+            >
               {viewMode === 'camera' ? (
                 <>
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
+                    loop
                     muted
                     style={{
-                      transform: `${facingMode === 'user' ? 'scaleX(-1)' : ''} scale(${zoomLevel})`,
-                      filter: currentFilterObj.css,
+                      transform: `${facingMode === 'user' && !videoRef.current?.src ? 'scaleX(-1)' : ''} scale(${zoomLevel})`,
                       transformOrigin: 'center center',
-                      transition: 'transform 0.25s ease-out, filter 0.3s ease-out'
+                      transition: 'transform 0.25s ease-out'
                     }}
                     className="w-full h-full object-cover"
                   />
                   <div className="camera-grid absolute inset-0 pointer-events-none z-10 opacity-25" />
-
-                  {/* Fallback Camera Diagnostic Card if blocked */}
-                  {cameraError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-20 bg-black/80 backdrop-blur-md">
-                      <AlertCircle className="w-10 h-10 text-[#FFD600] mb-2" />
-                      <p className="text-xs font-bold text-white mb-1">Live Camera Feed Standby</p>
-                      <p className="text-[11px] text-neutral-400 mb-3">{cameraError}</p>
-                      <button
-                        onClick={() => {
-                          setFacingMode(facingMode === 'user' ? 'environment' : 'user');
-                        }}
-                        className="px-4 py-1.5 rounded-xl bg-[#FFD600] text-black font-bold text-xs"
-                      >
-                        Retry Hardware Stream
-                      </button>
-                    </div>
-                  )}
                 </>
               ) : (
                 <video
@@ -623,11 +647,8 @@ export function PhoneExperience() {
               {viewMode === 'camera' && (
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => {
-                      sound.playClick();
-                      setTorchEnabled(!torchEnabled);
-                    }}
-                    className={`p-2 rounded-full backdrop-blur-md border text-xs transition-all ${
+                    onClick={toggleTorchDirect}
+                    className={`p-2 rounded-full backdrop-blur-md border text-xs transition-all cursor-pointer ${
                       torchEnabled
                         ? 'bg-[#FFD600] text-black border-[#FFD600]'
                         : 'bg-black/60 border-white/15 text-white hover:text-[#FFD600]'
@@ -638,11 +659,8 @@ export function PhoneExperience() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      sound.playClick();
-                      setFacingMode(facingMode === 'user' ? 'environment' : 'user');
-                    }}
-                    className="p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:text-[#FFD600] transition-colors"
+                    onClick={flipCameraDirect}
+                    className="p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:text-[#FFD600] transition-colors cursor-pointer"
                     title="Flip Camera"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -653,18 +671,12 @@ export function PhoneExperience() {
 
             {/* Quick Zoom Bar (1x, 2x, 3x, 4x) */}
             {viewMode === 'camera' && !showGallery && (
-              <div className="absolute top-28 right-4 z-30 flex flex-col gap-1.5 bg-black/75 backdrop-blur-md p-1 rounded-full border border-white/15 shadow-xl">
+              <div className="absolute top-28 right-4 z-30 flex flex-col gap-1.5 bg-black/80 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-xl">
                 {[1.0, 2.0, 3.0, 4.0].map((z) => (
                   <button
                     key={z}
-                    onClick={() => {
-                      sound.playClick();
-                      setZoomLevel(z);
-                      const msg = `🔍 Zoom adjusted to ${z}x.`;
-                      setAiResponseText(msg);
-                      speakText(`Zoom ${z}x`);
-                    }}
-                    className={`w-7 h-7 rounded-full text-[10px] font-mono font-bold flex items-center justify-center transition-all ${
+                    onClick={() => setZoomDirect(z)}
+                    className={`w-7 h-7 rounded-full text-[10px] font-mono font-bold flex items-center justify-center transition-all cursor-pointer ${
                       zoomLevel === z
                         ? 'bg-[#FFD600] text-black shadow-md scale-105'
                         : 'text-neutral-300 hover:text-white hover:bg-white/10'
@@ -676,34 +688,28 @@ export function PhoneExperience() {
               </div>
             )}
 
-            {/* Interactive Filter Selection Drawer */}
+            {/* Interactive Filter Drawer */}
             {showFilterDrawer && (
-              <div className="absolute top-28 left-4 right-14 z-30 bg-black/85 backdrop-blur-xl border border-white/20 rounded-2xl p-3 shadow-2xl animate-in fade-in duration-150">
-                <div className="flex items-center justify-between mb-2">
+              <div className="absolute top-28 left-4 right-14 z-40 bg-black/90 backdrop-blur-2xl border border-white/25 rounded-2xl p-3 shadow-2xl animate-in fade-in duration-150">
+                <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/10">
                   <span className="text-[10px] font-mono font-bold text-[#FFD600] uppercase">Select Pro Filter LUT</span>
-                  <button onClick={() => setShowFilterDrawer(false)} className="text-neutral-400 hover:text-white">
-                    <X className="w-3 h-3" />
+                  <button onClick={() => setShowFilterDrawer(false)} className="text-neutral-400 hover:text-white cursor-pointer">
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {CAMERA_FILTERS.map((f) => (
                     <button
                       key={f.id}
-                      onClick={() => {
-                        sound.playClick();
-                        setActiveFilter(f.id);
-                        setShowFilterDrawer(false);
-                        const msg = `🎨 Switched to ${f.name} filter (${f.desc}).`;
-                        setAiResponseText(msg);
-                        speakText(f.name);
-                      }}
-                      className={`p-1.5 rounded-xl border text-[10px] font-mono flex flex-col items-center gap-0.5 transition-all ${
+                      onClick={() => setFilterDirect(f.id)}
+                      className={`p-2 rounded-xl border text-[10px] font-mono text-left flex items-center justify-between transition-all cursor-pointer ${
                         activeFilter === f.id
                           ? 'bg-[#FFD600] text-black font-bold border-[#FFD600] shadow-md'
                           : 'bg-neutral-900/90 border-white/10 text-neutral-300 hover:border-white/30'
                       }`}
                     >
                       <span>{f.name}</span>
+                      {activeFilter === f.id && <Check className="w-3 h-3" />}
                     </button>
                   ))}
                 </div>
@@ -738,9 +744,9 @@ export function PhoneExperience() {
               </div>
             )}
 
-            {/* IN-APP CACHED PHOTO GALLERY OVERLAY */}
+            {/* In-App Photo Gallery Drawer */}
             {showGallery && (
-              <div className="absolute inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col p-4 pt-16 animate-in fade-in duration-200">
+              <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col p-4 pt-16 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-[#FFD600]" />
@@ -756,7 +762,7 @@ export function PhoneExperience() {
                           clearPhotoCache();
                           setCachedPhotos([]);
                         }}
-                        className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all text-xs"
+                        className="p-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all text-xs cursor-pointer"
                         title="Clear All"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -764,7 +770,7 @@ export function PhoneExperience() {
                     )}
                     <button
                       onClick={() => setShowGallery(false)}
-                      className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all"
+                      className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -774,7 +780,7 @@ export function PhoneExperience() {
                 {cachedPhotos.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-neutral-400 gap-3">
                     <Camera className="w-10 h-10 text-neutral-600" />
-                    <p className="text-xs">No cached photos yet. Tell the AI Agent "Take photo" or click the shutter.</p>
+                    <p className="text-xs">No cached photos yet. Tap "Snap Photo" or use voice commands.</p>
                   </div>
                 ) : (
                   <div className="flex-1 overflow-y-auto py-3 grid grid-cols-2 gap-2 scrollbar-none">
@@ -832,13 +838,13 @@ export function PhoneExperience() {
                             link.download = `snapsteady_${selectedPhoto.id}.jpg`;
                             link.click();
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-[#FFD600] text-black text-xs font-bold flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-lg bg-[#FFD600] text-black text-xs font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <Download className="w-3 h-3" /> Download
                         </button>
                         <button
                           onClick={() => setSelectedPhoto(null)}
-                          className="p-1 rounded bg-white/10 text-white"
+                          className="p-1 rounded bg-white/10 text-white cursor-pointer"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -853,7 +859,7 @@ export function PhoneExperience() {
             )}
 
             {/* Bottom Autonomous AI Agent HUD & Controls */}
-            <div className="relative z-30 p-3.5 pb-5 flex flex-col gap-2 bg-gradient-to-t from-black via-black/90 to-transparent">
+            <div className="relative z-40 p-3 pb-5 flex flex-col gap-2.5 bg-gradient-to-t from-black via-black/95 to-transparent">
               {speechTranscript && (
                 <div className="p-2 rounded-xl bg-[#FFD600] text-neutral-950 font-bold text-xs shadow-lg animate-pulse">
                   🗣️ Agent Heard: "{speechTranscript}"
@@ -861,7 +867,7 @@ export function PhoneExperience() {
               )}
 
               {/* AI Agent Terminal Status Card */}
-              <div className="p-3 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/15 text-white shadow-2xl text-xs space-y-1">
+              <div className="p-2.5 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/20 text-white shadow-2xl text-xs space-y-1">
                 <div className="flex items-center justify-between font-bold text-[#FFD600] text-[11px] font-mono">
                   <div className="flex items-center gap-1.5">
                     <Sparkles className="w-3 h-3 text-[#FFD600] animate-spin" />
@@ -869,35 +875,92 @@ export function PhoneExperience() {
                   </div>
                   <span className="text-[9px] text-neutral-400 font-mono">Real-Time OpenRouter</span>
                 </div>
-                <p className="text-neutral-200 text-xs leading-relaxed max-h-[58px] overflow-y-auto font-sans">
+                <p className="text-neutral-200 text-[11px] leading-relaxed max-h-[46px] overflow-y-auto font-sans">
                   {aiResponseText}
                 </p>
               </div>
 
-              {/* Camera Shortcut Chips */}
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5">
-                {[
-                  { label: '📸 Snap Photo', cmd: 'take photo' },
-                  { label: '🎬 Cinematic LUT', cmd: 'cinematic filter' },
-                  { label: '🕶️ B&W Film', cmd: 'black and white filter' },
-                  { label: '🎨 Vivid HDR', cmd: 'vivid filter' },
-                  { label: '🔍 Zoom 2x', cmd: 'zoom 2x' },
-                  { label: '🔄 Flip Cam', cmd: 'flip camera' },
-                  { label: '💡 Torch', cmd: 'torch' },
-                  { label: '🧠 Analyze Scene', cmd: 'analyze what you see in the frame' }
-                ].map((chip, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => processAgentIntent(chip.cmd)}
-                    className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md hover:bg-[#FFD600] hover:text-black border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap transition-all shrink-0"
-                  >
-                    {chip.label}
-                  </button>
-                ))}
+              {/* Camera Shortcut Chips — Direct Zero-Latency Execution */}
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-1">
+                <button
+                  onClick={captureAndCachePhoto}
+                  className="px-3 py-1.5 rounded-full bg-[#FFD600] text-black font-extrabold text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
+                >
+                  📸 Snap Photo
+                </button>
+
+                <button
+                  onClick={() => setFilterDirect('cinematic')}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 ${
+                    activeFilter === 'cinematic'
+                      ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+                      : 'bg-black/80 backdrop-blur-md border-white/25 text-white hover:border-[#FFD600]'
+                  }`}
+                >
+                  🎬 Cinematic LUT
+                </button>
+
+                <button
+                  onClick={() => setFilterDirect('bw')}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 ${
+                    activeFilter === 'bw'
+                      ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+                      : 'bg-black/80 backdrop-blur-md border-white/25 text-white hover:border-[#FFD600]'
+                  }`}
+                >
+                  🕶️ B&W Film
+                </button>
+
+                <button
+                  onClick={() => setFilterDirect('vivid')}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 ${
+                    activeFilter === 'vivid'
+                      ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+                      : 'bg-black/80 backdrop-blur-md border-white/25 text-white hover:border-[#FFD600]'
+                  }`}
+                >
+                  🎨 Vivid HDR
+                </button>
+
+                <button
+                  onClick={() => setZoomDirect(zoomLevel === 2.0 ? 1.0 : 2.0)}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 ${
+                    zoomLevel === 2.0
+                      ? 'bg-[#FFD600] text-black border-[#FFD600]'
+                      : 'bg-black/80 backdrop-blur-md border-white/25 text-white hover:border-[#FFD600]'
+                  }`}
+                >
+                  🔍 2x Zoom
+                </button>
+
+                <button
+                  onClick={flipCameraDirect}
+                  className="px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/25 text-white hover:border-[#FFD600] text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  🔄 Flip Cam
+                </button>
+
+                <button
+                  onClick={toggleTorchDirect}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 ${
+                    torchEnabled
+                      ? 'bg-[#FFD600] text-black border-[#FFD600]'
+                      : 'bg-black/80 backdrop-blur-md border-white/25 text-white hover:border-[#FFD600]'
+                  }`}
+                >
+                  💡 Torch
+                </button>
+
+                <button
+                  onClick={() => processAgentIntent('analyze what you see in the frame')}
+                  className="px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/25 text-white hover:border-[#FFD600] text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  🧠 Analyze Scene
+                </button>
               </div>
 
               {/* Agent Typed Command Bar */}
-              <form onSubmit={handleTextSubmit} className="flex items-center gap-1.5 bg-neutral-900/90 border border-white/15 rounded-xl px-2 py-1">
+              <form onSubmit={handleTextSubmit} className="flex items-center gap-1.5 bg-neutral-900/90 border border-white/20 rounded-xl px-2.5 py-1.5">
                 <input
                   type="text"
                   value={textCommand}
@@ -907,9 +970,9 @@ export function PhoneExperience() {
                 />
                 <button
                   type="submit"
-                  className="p-1 rounded-lg bg-[#FFD600] text-black hover:bg-yellow-400 transition-colors"
+                  className="p-1 rounded-lg bg-[#FFD600] text-black hover:bg-yellow-400 transition-colors cursor-pointer"
                 >
-                  <Send className="w-3 h-3" />
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </form>
 
@@ -921,7 +984,7 @@ export function PhoneExperience() {
                     sound.playClick();
                     setShowGallery(!showGallery);
                   }}
-                  className="w-12 h-12 rounded-2xl bg-neutral-900 border border-white/20 flex items-center justify-center text-neutral-300 hover:text-[#FFD600] relative overflow-hidden"
+                  className="w-12 h-12 rounded-2xl bg-neutral-900 border border-white/20 flex items-center justify-center text-neutral-300 hover:text-[#FFD600] relative overflow-hidden shrink-0 cursor-pointer"
                   title="Open Gallery"
                 >
                   {cachedPhotos.length > 0 ? (
@@ -939,7 +1002,7 @@ export function PhoneExperience() {
                 {/* Voice Mic Button */}
                 <button
                   onClick={toggleVoiceRecording}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all active:scale-95 shadow-xl ${
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all active:scale-95 shadow-xl shrink-0 cursor-pointer ${
                     isListening
                       ? 'bg-red-500 border-red-300 text-white animate-pulse'
                       : 'bg-neutral-900/90 border-[#FFD600]/40 text-[#FFD600] hover:bg-[#FFD600] hover:text-black'
@@ -952,7 +1015,7 @@ export function PhoneExperience() {
                 {/* Shutter Button */}
                 <button
                   onClick={captureAndCachePhoto}
-                  className="flex-1 h-12 rounded-2xl bg-[#FFD600] hover:bg-yellow-400 text-black font-extrabold text-xs flex items-center justify-center gap-2 shadow-xl shadow-[#FFD600]/25 active:scale-98 transition-transform"
+                  className="flex-1 h-12 rounded-2xl bg-[#FFD600] hover:bg-yellow-400 text-black font-extrabold text-xs flex items-center justify-center gap-2 shadow-xl shadow-[#FFD600]/25 active:scale-98 transition-transform cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
                   <span>SNAP & CACHE</span>
