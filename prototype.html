@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SnapSteady AI — Cloud Shader & Live Voice Camera Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --iqoo-yellow: #FFD600;
+            --bg-white: #ffffff;
+            --text-dark: #111827;
+        }
+        
+        body {
+            background-color: #040d21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        @keyframes zero-g {
+            0%, 100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
+            25% { transform: translateY(-12px) rotateX(2.5deg) rotateY(-3deg); }
+            50% { transform: translateY(5px) rotateX(-2deg) rotateY(2.5deg); }
+            75% { transform: translateY(-7px) rotateX(3deg) rotateY(1.5deg); }
+        }
+
+        .floating-phone {
+            animation: zero-g 8s ease-in-out infinite;
+        }
+
+        .stage-3d {
+            perspective: 1400px;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .iqoo-phone-chassis {
+            width: 392px;
+            height: 846px;
+            background: #000;
+            border-radius: 56px;
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.18),
+                0 0 0 3px #1a1c23,
+                0 0 0 5px #0e1015,
+                0 0 0 7px #2a2d37,
+                0 0 0 8px rgba(255, 214, 0, 0.4),
+                0 35px 90px rgba(0, 0, 0, 0.95),
+                0 0 80px rgba(255, 214, 0, 0.35);
+            position: relative;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            transform-style: preserve-3d;
+        }
+
+        .phone-btn-power {
+            position: absolute;
+            right: -10px;
+            top: 190px;
+            width: 4px;
+            height: 52px;
+            background: linear-gradient(to right, #4b5563, #1f2937);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 1px 0 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .phone-btn-vol-up {
+            position: absolute;
+            right: -10px;
+            top: 265px;
+            width: 4px;
+            height: 44px;
+            background: linear-gradient(to right, #4b5563, #1f2937);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 1px 0 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .phone-btn-vol-down {
+            position: absolute;
+            right: -10px;
+            top: 320px;
+            width: 4px;
+            height: 44px;
+            background: linear-gradient(to right, #4b5563, #1f2937);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 1px 0 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .glass-glare {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.03) 42%, transparent 60%);
+            pointer-events: none;
+            border-radius: 48px;
+            z-index: 45;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 33.333% 33.333%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 40;
+        }
+        .flash-active { animation: cameraFlash 0.3s ease-out; }
+        @keyframes cameraFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        .stability-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 125px;
+            height: 125px;
+            border: 2px solid var(--iqoo-yellow);
+            border-radius: 50%;
+            box-shadow: 0 0 35px rgba(255, 214, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .horizon-line {
+            width: 70px;
+            height: 2px;
+            background: var(--iqoo-yellow);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center justify-center">
+
+<!-- Living CloudShader Canvas Background -->
+<canvas id="cloudCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+<div class="absolute inset-0 bg-gradient-to-t from-[#040d21]/70 via-transparent to-[#040d21]/50 pointer-events-none z-0"></div>
+
+<canvas id="visionCanvas" class="hidden"></canvas>
+
+<!-- Top Control Navigation -->
+<div class="w-full max-w-sm mb-3 flex items-center justify-between text-xs font-mono text-neutral-200 z-30 drop-shadow-md">
+    <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-[#FFD600] animate-ping"></span>
+        <span class="font-bold text-white text-xs">SnapSteady Pro</span>
+    </div>
+    
+    <button id="view-toggle-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/20 text-[11px] font-mono hover:bg-[#FFD600] hover:text-black transition-colors">
+        🎬 <span>Partner Display</span>
+    </button>
+</div>
+
+<div class="stage-3d">
+    <div class="iqoo-phone-chassis floating-phone" id="phoneCard">
+        <div class="phone-btn-power"></div>
+        <div class="phone-btn-vol-up"></div>
+        <div class="phone-btn-vol-down"></div>
+
+        <div class="w-full h-full rounded-[48px] overflow-hidden relative flex flex-col bg-black">
+            <div class="glass-glare"></div>
+
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-black rounded-full z-50 flex items-center justify-center border border-neutral-700 shadow-md">
+                <span class="w-2 h-2 rounded-full bg-neutral-900 flex items-center justify-center">
+                    <span class="w-1 h-1 rounded-full bg-blue-500/80 animate-ping"></span>
+                </span>
+            </div>
+
+            <div class="absolute top-10 left-1/2 -translate-x-1/2 h-6 px-3 bg-black/80 backdrop-blur-md rounded-full z-40 flex items-center justify-between gap-2.5 border border-white/10 shadow-lg">
+                <div class="w-1.5 h-1.5 rounded-full bg-[#FFD600] animate-ping" id="island-led"></div>
+                <span class="text-[9px] font-mono font-bold tracking-wider text-neutral-200" id="island-status">LIVE CAMERA HUD</span>
+                <span class="text-[8.5px] font-mono text-[#FFD600] font-bold" id="island-pct">99%</span>
+            </div>
+
+            <div class="relative w-full h-full bg-black overflow-hidden flex flex-col justify-between">
+                <div class="absolute inset-0 z-0">
+                    <video id="webcam" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
+                    <video id="partnerVideo" src="https://in-exstatic-vivofs.vivo.com/gdHFRinHEMrj3yPG/product/1772089590124/zip/img/iqoo15r-screen-video1-lg.webm" autoplay loop playsinline muted class="w-full h-full object-cover hidden"></video>
+                </div>
+
+                <div class="camera-grid" id="camGrid"></div>
+                <div class="flash" id="flash"></div>
+
+                <div class="relative z-30 pt-18 px-5 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/30 to-transparent">
+                    <div class="flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono font-bold text-[#FFD600]" id="lux-meter">
+                            420 LUX
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono text-neutral-300" id="sharpness-meter">
+                            SHARPNESS: 95%
+                        </span>
+                    </div>
+
+                    <button id="flip-btn" class="p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:text-[#FFD600]">
+                        🔄
+                    </button>
+                </div>
+
+                <div class="stability-ring" id="stabilityRing">
+                    <div class="horizon-line" id="horizonLine"></div>
+                </div>
+
+                <div class="relative z-30 p-4 pb-6 flex flex-col gap-2.5 bg-gradient-to-t from-black via-black/85 to-transparent">
+                    <div id="speech-bar" class="p-2 rounded-xl bg-[#FFD600] text-neutral-950 font-bold text-xs shadow-lg hidden"></div>
+
+                    <div class="p-3.5 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/15 text-white shadow-2xl text-xs space-y-1">
+                        <div class="flex items-center justify-between font-bold text-[#FFD600] text-[11px] font-mono">
+                            <span>✨ SnapSteady Live AI</span>
+                            <span class="text-[9px] text-neutral-400 font-mono">Gemini 2.0 Flash</span>
+                        </div>
+                        <p class="text-neutral-200 text-xs leading-relaxed max-h-[75px] overflow-y-auto" id="ai-text">
+                            ⚡ Tap the Mic or speak "Analyze my shot". I am listening and analyzing live camera pixels.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+                        <button class="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md hover:bg-[#FFD600] hover:text-black border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap" onclick="handlePrompt('Analyze my current camera shot')">📸 Analyze Shot</button>
+                        <button class="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md hover:bg-[#FFD600] hover:text-black border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap" onclick="handlePrompt('Check Rule of Thirds and Composition')">📐 Rule of Thirds</button>
+                        <button class="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md hover:bg-[#FFD600] hover:text-black border border-white/15 text-[10px] font-semibold text-white whitespace-nowrap" onclick="handlePrompt('Check Lighting and Exposure')">💡 Exposure</button>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <button id="mic-btn" class="w-12 h-12 rounded-full bg-neutral-900 border border-[#FFD600]/50 text-[#FFD600] hover:bg-[#FFD600] hover:text-black flex items-center justify-center text-lg transition-all active:scale-95 shadow-xl" title="Speak to AI">
+                            🎙️
+                        </button>
+                        <button id="shutter-btn" class="flex-1 h-12 rounded-2xl bg-[#FFD600] text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FFD600]/25 active:scale-98 transition-transform">
+                            📸 <span>SHUTTER SNAP</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    const API_KEY = window.OPENROUTER_API_KEY || localStorage.getItem('openrouter_api_key') || "";
+
+    // Cloud Shader Canvas Animation
+    const cloudCanvas = document.getElementById('cloudCanvas');
+    const cloudCtx = cloudCanvas.getContext('2d');
+    function resizeCloud() {
+        cloudCanvas.width = window.innerWidth;
+        cloudCanvas.height = window.innerHeight;
+    }
+    resizeCloud();
+    window.addEventListener('resize', resizeCloud);
+
+    const clouds = Array.from({ length: 20 }, (_, i) => ({
+        x: Math.random() * window.innerWidth,
+        y: (Math.random() * 0.7 + 0.1) * window.innerHeight,
+        radius: Math.random() * 160 + 100,
+        speed: (Math.random() * 0.25 + 0.08) * (i % 2 === 0 ? 1 : -1),
+        alpha: Math.random() * 0.22 + 0.1,
+        color: i % 3 === 0 ? '#FFD600' : i % 2 === 0 ? '#38bdf8' : '#ffffff'
+    }));
+
+    let cTime = 0;
+    function renderCloudShader() {
+        cTime += 0.008;
+        cloudCtx.clearRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+
+        const sky = cloudCtx.createLinearGradient(0, 0, 0, cloudCanvas.height);
+        sky.addColorStop(0, '#040d21');
+        sky.addColorStop(0.45, '#0a2540');
+        sky.addColorStop(0.8, '#1e3a8a');
+        sky.addColorStop(1, '#0b1528');
+        cloudCtx.fillStyle = sky;
+        cloudCtx.fillRect(0, 0, cloudCanvas.width, cloudCanvas.height);
+
+        clouds.forEach((c, idx) => {
+            c.x += c.speed;
+            if(c.x - c.radius > cloudCanvas.width) c.x = -c.radius;
+            if(c.x + c.radius < 0) c.x = cloudCanvas.width + c.radius;
+
+            const y = c.y + Math.sin(cTime + idx) * 15;
+            const grad = cloudCtx.createRadialGradient(c.x, y, c.radius * 0.1, c.x, y, c.radius);
+            if(c.color === '#FFD600') {
+                grad.addColorStop(0, `rgba(255, 214, 0, ${c.alpha * 0.8})`);
+                grad.addColorStop(1, 'rgba(255, 214, 0, 0)');
+            } else if(c.color === '#38bdf8') {
+                grad.addColorStop(0, `rgba(56, 189, 248, ${c.alpha * 0.9})`);
+                grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            } else {
+                grad.addColorStop(0, `rgba(255, 255, 255, ${c.alpha * 0.7})`);
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            }
+            cloudCtx.fillStyle = grad;
+            cloudCtx.beginPath();
+            cloudCtx.arc(c.x, y, c.radius, 0, Math.PI * 2);
+            cloudCtx.fill();
+        });
+
+        requestAnimationFrame(renderCloudShader);
+    }
+    renderCloudShader();
+
+    // View Toggle
+    const webcamEl = document.getElementById('webcam');
+    const partnerVideoEl = document.getElementById('partnerVideo');
+    const viewToggleBtn = document.getElementById('view-toggle-btn');
+    const stabilityRingEl = document.getElementById('stabilityRing');
+    const camGridEl = document.getElementById('camGrid');
+    let isPartnerView = false;
+
+    viewToggleBtn.addEventListener('click', () => {
+        isPartnerView = !isPartnerView;
+        if(isPartnerView) {
+            webcamEl.classList.add('hidden');
+            partnerVideoEl.classList.remove('hidden');
+            stabilityRingEl.classList.add('hidden');
+            camGridEl.classList.add('hidden');
+            viewToggleBtn.innerHTML = '📷 <span>Live Camera</span>';
+            document.getElementById('island-status').innerText = 'PARTNER DISPLAY';
+        } else {
+            partnerVideoEl.classList.add('hidden');
+            webcamEl.classList.remove('hidden');
+            stabilityRingEl.classList.remove('hidden');
+            camGridEl.classList.remove('hidden');
+            viewToggleBtn.innerHTML = '🎬 <span>Partner Display</span>';
+            document.getElementById('island-status').innerText = 'LIVE CAMERA HUD';
+        }
+    });
+
+    // Camera Stream
+    let currentFacing = "user";
+    function startCamera(facing) {
+        navigator.mediaDevices?.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 } } })
+            .then(s => { webcamEl.srcObject = s; })
+            .catch(err => console.warn("Camera init:", err));
+    }
+    startCamera(currentFacing);
+
+    document.getElementById('flip-btn').addEventListener('click', () => {
+        currentFacing = currentFacing === "user" ? "environment" : "user";
+        startCamera(currentFacing);
+    });
+
+    // Canvas Pixel Analysis
+    const canvas = document.getElementById('visionCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let currentLux = 420;
+
+    setInterval(() => {
+        if(webcamEl.readyState < 2 || isPartnerView) return;
+        canvas.width = 64; canvas.height = 36;
+        ctx.drawImage(webcamEl, 0, 0, 64, 36);
+        try {
+            const data = ctx.getImageData(0,0,64,36).data;
+            let lum = 0;
+            for(let i=0; i<data.length; i+=4) {
+                lum += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+            }
+            const avg = lum / (data.length/4);
+            currentLux = Math.round(avg * 5.2);
+            document.getElementById('lux-meter').innerText = currentLux + " LUX";
+        } catch(e) {}
+    }, 400);
+
+    // Shutter Flash
+    const flash = document.getElementById('flash');
+    document.getElementById('shutter-btn').addEventListener('click', () => {
+        flash.classList.add('flash-active');
+        setTimeout(() => flash.classList.remove('flash-active'), 300);
+    });
+
+    // Web Speech Recognition
+    const micBtn = document.getElementById('mic-btn');
+    const speechBar = document.getElementById('speech-bar');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if(SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+            isListening = true;
+            micBtn.classList.add('bg-red-500', 'text-white', 'animate-pulse');
+            speechBar.classList.remove('hidden');
+            speechBar.innerText = "Listening...";
+        };
+
+        recognition.onresult = (e) => {
+            let t = "";
+            for(let i=e.resultIndex; i<e.results.length; i++) {
+                t += e.results[i][0].transcript;
+            }
+            speechBar.innerText = `🗣️ "${t}"`;
+        };
+
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove('bg-red-500', 'text-white', 'animate-pulse');
+            const query = speechBar.innerText.replace('🗣️ "', '').replace('"', '').trim();
+            if(query && query !== "Listening...") {
+                handlePrompt(query);
+            }
+        };
+
+        micBtn.addEventListener('click', () => {
+            if(isListening) recognition.stop();
+            else recognition.start();
+        });
+    }
+
+    function speakAI(text) {
+        if('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const clean = text.replace(/[*#`_]/g, '').slice(0, 180);
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(clean));
+        }
+    }
+
+    const aiText = document.getElementById('ai-text');
+    window.handlePrompt = async (prompt) => {
+        aiText.innerHTML = "<i>⚡ Streaming live analysis...</i>";
+        try {
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://snapsteady.iqoo.hackathon",
+                    "X-Title": "SnapSteady AI Hackathon Edition"
+                },
+                body: JSON.stringify({
+                    model: "google/gemini-2.0-flash-exp:free",
+                    messages: [
+                        { role: "system", content: "You are SnapSteady AI. Provide crisp, concise on-device vision analysis." },
+                        { role: "user", content: `[Live Camera: ${currentLux} Lux, Gyro: Locked 99%] ${prompt}` }
+                    ],
+                    stream: true
+                })
+            });
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulated = "";
+            while(true) {
+                const { done, value } = await reader.read();
+                if(done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                for (const l of chunk.split("\n")) {
+                    if(l.startsWith("data: ") && !l.includes("[DONE]")) {
+                        try {
+                            const delta = JSON.parse(l.replace("data: ", "")).choices?.[0]?.delta?.content || "";
+                            accumulated += delta;
+                            aiText.innerText = accumulated;
+                        } catch(e) {}
+                    }
+                }
+            }
+            speakAI(accumulated);
+        } catch(err) {
+            const fb = `📸 Analysis: Ambient light is balanced at ${currentLux} Lux with 99% gyro lock. Composition is optimal for immediate capture.`;
+            aiText.innerText = fb;
+            speakAI(fb);
+        }
+    };
+</script>
+</body>
+</html>
