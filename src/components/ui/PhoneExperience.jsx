@@ -17,7 +17,8 @@ import {
   Sparkles,
   Send,
   Sliders,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 import { sound } from '../../utils/audio';
 import { streamOpenRouterChat, AVAILABLE_MODELS, OPENROUTER_API_KEY } from '../../utils/aiService';
@@ -25,14 +26,14 @@ import { getCachedPhotos, savePhotoToCache, deleteCachedPhoto, clearPhotoCache }
 
 const OFFICIAL_IQOO_VIDEO = "https://in-exstatic-vivofs.vivo.com/gdHFRinHEMrj3yPG/product/1772089590124/zip/img/iqoo15r-screen-video1-lg.webm";
 
-// Live Pro Camera Filters with high-impact CSS filters
+// High-impact live camera visual filters
 const CAMERA_FILTERS = [
-  { id: 'none', name: 'Master Raw', css: 'none', desc: 'True natural color pipeline' },
-  { id: 'cinematic', name: 'Cinematic', css: 'contrast(1.3) saturate(1.5) sepia(0.2) hue-rotate(-10deg)', desc: 'Teal & gold warm film LUT' },
-  { id: 'bw', name: 'Leica B&W', css: 'grayscale(100%) contrast(1.5) brightness(0.9)', desc: 'Deep tonal monochrome' },
-  { id: 'vivid', name: 'Vivid HDR', css: 'saturate(2.2) contrast(1.25) brightness(1.1)', desc: 'Ultra-rich color vibrancy' },
-  { id: 'night', name: 'Night Glow', css: 'brightness(1.5) contrast(1.4) hue-rotate(85deg) saturate(1.4)', desc: 'Amplified low-light sensor' },
-  { id: 'cyber', name: 'Cyberpunk', css: 'hue-rotate(185deg) saturate(2.2) contrast(1.4)', desc: 'Electric neo-tokyo hue' }
+  { id: 'none', name: 'Master Raw', css: 'none', desc: 'Natural master sensor feed', badge: 'MASTER RAW' },
+  { id: 'cinematic', name: 'Cinematic', css: 'contrast(1.4) saturate(1.6) sepia(0.25) hue-rotate(-12deg)', desc: 'Teal & gold warm film LUT', badge: '🎬 CINEMATIC 35MM' },
+  { id: 'bw', name: 'Leica B&W', css: 'grayscale(100%) contrast(1.6) brightness(0.88)', desc: 'High-contrast monochrome', badge: '🕶️ LEICA B&W FILM' },
+  { id: 'vivid', name: 'Vivid HDR', css: 'saturate(2.5) contrast(1.35) brightness(1.12)', desc: 'Ultra-rich color pop', badge: '🎨 VIVID HDR 100%' },
+  { id: 'night', name: 'Night Glow', css: 'brightness(1.55) contrast(1.4) hue-rotate(85deg) saturate(1.5)', desc: 'Amplified low-light sensor', badge: '🌃 NIGHT SIGHT' },
+  { id: 'cyber', name: 'Cyberpunk', css: 'hue-rotate(185deg) saturate(2.4) contrast(1.45)', desc: 'Electric neo-tokyo hue', badge: '⚡ CYBERPUNK' }
 ];
 
 export function PhoneExperience() {
@@ -41,6 +42,7 @@ export function PhoneExperience() {
   const [viewMode, setViewMode] = useState('camera'); // 'camera' | 'partner_video'
   const [facingMode, setFacingMode] = useState('user'); // 'user' | 'environment'
   const [captureFlash, setCaptureFlash] = useState(false);
+  const [captureToast, setCaptureToast] = useState(null);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1.0); // 1.0, 1.5, 2.0, 3.0, 4.0
   const [activeFilter, setActiveFilter] = useState('none');
@@ -65,7 +67,7 @@ export function PhoneExperience() {
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [aiResponseText, setAiResponseText] = useState(
-    '🤖 Vision Agent online. Tap "Snap Photo", "Cinematic LUT", "B&W Film", or "Vivid HDR".'
+    '🤖 Vision Agent online. Click "Snap Photo", "Cinematic LUT", "B&W Film", or "Vivid HDR".'
   );
 
   const videoRef = useRef(null);
@@ -153,8 +155,8 @@ export function PhoneExperience() {
             }
           })
           .catch((err) => {
-            console.warn('Webcam busy or unavailable, playing active simulation feed:', err);
-            setCameraError('Webcam in use by another app');
+            console.warn('Webcam busy, playing active simulation feed:', err);
+            setCameraError('Webcam busy — playing live video stream');
             if (videoRef.current) {
               videoRef.current.srcObject = null;
               videoRef.current.src = OFFICIAL_IQOO_VIDEO;
@@ -235,13 +237,13 @@ export function PhoneExperience() {
     setDeviceTilt({ x: 0, y: 0 });
   };
 
-  // DIRECT ACTION HANDLERS (Zero-delay execution)
+  // DIRECT ACTION HANDLERS (100% Zero Delay)
   const setFilterDirect = (filterId) => {
     sound.playClick();
     setActiveFilter(filterId);
     setShowFilterDrawer(false);
     const found = CAMERA_FILTERS.find((f) => f.id === filterId) || CAMERA_FILTERS[0];
-    const msg = `🎨 Applied ${found.name} filter (${found.desc}).`;
+    const msg = `🎨 Switched to ${found.name} filter (${found.desc}).`;
     setAiResponseText(msg);
     speakText(found.name);
   };
@@ -300,17 +302,16 @@ export function PhoneExperience() {
         ctx.drawImage(video, 0, 0, snapCanvas.width, snapCanvas.height);
         dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
       } catch (e) {
-        console.warn('Direct frame copy fallback:', e);
+        console.warn('Canvas frame copy fallback:', e);
       }
     }
 
-    // High-fidelity fallback if canvas was tainted by cross-origin
     if (!dataUrl) {
       const snapCanvas = document.createElement('canvas');
       snapCanvas.width = 1280;
       snapCanvas.height = 720;
       const ctx = snapCanvas.getContext('2d');
-      ctx.fillStyle = activeFilter === 'bw' ? '#333' : '#0c1a30';
+      ctx.fillStyle = activeFilter === 'bw' ? '#222' : '#0a1628';
       ctx.fillRect(0, 0, 1280, 720);
       ctx.fillStyle = '#FFD600';
       ctx.font = 'bold 36px monospace';
@@ -326,7 +327,10 @@ export function PhoneExperience() {
     });
 
     if (saved) {
-      setCachedPhotos(getCachedPhotos());
+      const updatedList = getCachedPhotos();
+      setCachedPhotos(updatedList);
+      setCaptureToast(`Photo #${updatedList.length} Saved to Cache!`);
+      setTimeout(() => setCaptureToast(null), 3000);
       const message = `📸 Photo saved to cache (${activeFilter.toUpperCase()} filter, ${zoomLevel}x zoom).`;
       setAiResponseText(message);
       speakText('Photo captured and stored in your cache.');
@@ -487,7 +491,73 @@ export function PhoneExperience() {
     >
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Floating Mode & Filter Controls */}
+      {/* MASTER EXTERNAL CONTROL DECK (Always 100% accessible) */}
+      <div className="w-full max-w-2xl mb-5 flex flex-wrap items-center justify-center gap-2 p-3 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/20 shadow-2xl z-40">
+        <button
+          onClick={captureAndCachePhoto}
+          className="px-4 py-2 rounded-xl bg-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <Camera className="w-4 h-4" />
+          <span>Snap Photo</span>
+        </button>
+
+        <button
+          onClick={() => setFilterDirect('cinematic')}
+          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+            activeFilter === 'cinematic'
+              ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+          }`}
+        >
+          <span>🎬 Cinematic LUT</span>
+        </button>
+
+        <button
+          onClick={() => setFilterDirect('bw')}
+          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+            activeFilter === 'bw'
+              ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+          }`}
+        >
+          <span>🕶️ B&W Film</span>
+        </button>
+
+        <button
+          onClick={() => setFilterDirect('vivid')}
+          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+            activeFilter === 'vivid'
+              ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+          }`}
+        >
+          <span>🎨 Vivid HDR</span>
+        </button>
+
+        <button
+          onClick={() => setFilterDirect('none')}
+          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+            activeFilter === 'none'
+              ? 'bg-[#FFD600] text-black border-[#FFD600]'
+              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+          }`}
+        >
+          <span>RAW Clean</span>
+        </button>
+
+        <button
+          onClick={() => {
+            sound.playClick();
+            setShowGallery(!showGallery);
+          }}
+          className="px-3.5 py-2 rounded-xl bg-neutral-900 border border-white/20 text-[#FFD600] text-xs font-bold hover:border-[#FFD600] transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+          <span>Gallery ({cachedPhotos.length})</span>
+        </button>
+      </div>
+
+      {/* Floating Mode Controls */}
       <div className="w-full max-w-sm mb-3 flex items-center justify-between px-3 py-2 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/20 text-xs font-mono text-neutral-200 z-30 shadow-2xl">
         <div className="flex items-center gap-1.5">
           <button
@@ -528,18 +598,6 @@ export function PhoneExperience() {
           <button
             onClick={() => {
               sound.playClick();
-              setShowGallery(!showGallery);
-            }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-[#FFD600] text-[11px] cursor-pointer"
-            title="Open Cached Photos"
-          >
-            <ImageIcon className="w-3.5 h-3.5 text-[#FFD600]" />
-            <span>{cachedPhotos.length}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              sound.playClick();
               setSpeechOutputEnabled(!speechOutputEnabled);
             }}
             className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
@@ -577,6 +635,14 @@ export function PhoneExperience() {
           {/* Shutter Capture Flash */}
           {captureFlash && (
             <div className="absolute inset-0 bg-white z-50 flash-active pointer-events-none" />
+          )}
+
+          {/* Capture Toast Notification */}
+          {captureToast && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-[#FFD600] text-black font-extrabold text-xs rounded-full shadow-2xl flex items-center gap-1.5 animate-bounce">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{captureToast}</span>
+            </div>
           )}
 
           {/* Centered Punch-Hole Camera */}
@@ -669,9 +735,16 @@ export function PhoneExperience() {
               )}
             </div>
 
+            {/* On-Screen Active Filter Overlay Pill */}
+            {activeFilter !== 'none' && (
+              <div className="absolute top-26 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-[#FFD600] text-black font-mono font-black text-[10px] rounded-full shadow-[0_0_20px_rgba(255,214,0,0.8)] animate-pulse">
+                {currentFilterObj.badge}
+              </div>
+            )}
+
             {/* Quick Zoom Bar (1x, 2x, 3x, 4x) */}
             {viewMode === 'camera' && !showGallery && (
-              <div className="absolute top-28 right-4 z-30 flex flex-col gap-1.5 bg-black/80 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-xl">
+              <div className="absolute top-32 right-4 z-30 flex flex-col gap-1.5 bg-black/80 backdrop-blur-md p-1 rounded-full border border-white/20 shadow-xl">
                 {[1.0, 2.0, 3.0, 4.0].map((z) => (
                   <button
                     key={z}

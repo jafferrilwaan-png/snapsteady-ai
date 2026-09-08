@@ -41,6 +41,11 @@ export function CinematicFooter() {
       {/* Center Content */}
       <div className="max-w-4xl mx-auto px-6 text-center relative z-10 flex flex-col items-center">
         <div className="backdrop-blur-2xl bg-black/60 border border-white/20 rounded-3xl p-8 sm:p-12 shadow-2xl w-full flex flex-col items-center">
+          <img
+            src="/logo.webp"
+            alt="iQOO Hackathon"
+            className="h-10 w-auto object-contain mb-4 drop-shadow-lg"
+          />
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFD600]/15 border border-[#FFD600]/40 text-xs font-mono text-[#FFD600] mb-4">
             <span>iQOO HACKATHON 2026</span>
           </div>

@@ -37,10 +37,12 @@ export function AetherHero({
         <nav className="mx-auto max-w-7xl backdrop-blur-2xl bg-black/60 border border-white/15 rounded-2xl px-6 py-3.5 flex items-center justify-between shadow-2xl">
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD600] text-sm font-black text-black shadow-md shadow-[#FFD600]/30">
-              iQ
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">
+            <img
+              src="/logo.webp"
+              alt="iQOO Hackathon Logo"
+              className="h-8 md:h-9 w-auto object-contain drop-shadow-md"
+            />
+            <span className="text-lg font-extrabold tracking-tight text-white hidden sm:inline-block">
               SnapSteady <span className="text-[#FFD600]">AI</span>
             </span>
           </div>
