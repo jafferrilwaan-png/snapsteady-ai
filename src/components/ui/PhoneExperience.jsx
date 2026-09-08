@@ -270,13 +270,13 @@ export function PhoneExperience({ onGenerateSlide }) {
     const prompt = topic || speechTranscript || 'SnapSteady On-Device Vision System';
     const cleanTitle = prompt.length > 40 ? prompt.slice(0, 38) + '...' : prompt;
     const newSlide = {
-      tag: "VOICE GENERATED SLIDE",
+      tag: "CREATOR VISION SLIDE",
       title: cleanTitle.toUpperCase(),
-      subtitle: `Presentation slide generated dynamically from voice pitch: "${prompt}".`,
+      subtitle: `Studio presentation slide generated dynamically from voice pitch: "${prompt}".`,
       bullets: [
         { label: "Hardware Sensor Integration", desc: `Calibrated with real sensor feed: ${realVisionData.lux} LUX, ${zoomLevel}x zoom, ${activeFilter.toUpperCase()} filter.` },
-        { label: "Zero Cloud Latency", desc: "Local NPU and WebRTC vision pipeline delivering instant computational photography." },
-        { label: "Hackathon Impact", desc: "Transforms flagship mobile hardware into an autonomous vision assistant and presentation engine." }
+        { label: "Zero-Edit Color LUT", desc: "Studio-grade computational color grading and dynamic range applied on the fly." },
+        { label: "Creator Ready Export", desc: "Instant high-resolution photo download and synchronized 16:9 presentation slide." }
       ]
     };
 
@@ -288,6 +288,32 @@ export function PhoneExperience({ onGenerateSlide }) {
     setAiResponseText(msg);
     speakText(`Slide created for ${cleanTitle}`);
   };
+
+  const executeCreatorZeroEditShot = async (topic) => {
+    sound.playClick();
+    const theme = topic || speechTranscript || 'Creator Studio Shot';
+    
+    // Auto-select optimal pro LUT based on speech context
+    let chosenFilter = 'cinematic';
+    if (theme.toLowerCase().includes('cyber') || theme.toLowerCase().includes('neon')) chosenFilter = 'cyber';
+    else if (theme.toLowerCase().includes('vivid') || theme.toLowerCase().includes('hdr') || theme.toLowerCase().includes('nature')) chosenFilter = 'vivid';
+    else if (theme.toLowerCase().includes('portrait') || theme.toLowerCase().includes('classic') || theme.toLowerCase().includes('b&w')) chosenFilter = 'bw';
+    else if (theme.toLowerCase().includes('night') || theme.toLowerCase().includes('dark')) chosenFilter = 'night';
+
+    setFilterDirect(chosenFilter);
+    setZoomDirect(2.0);
+
+    // Auto-capture studio shot with zero manual editing
+    await captureAndCachePhoto();
+
+    // Auto-generate presentation slide
+    triggerSlideGeneration(theme);
+
+    const msg = `⚡ Creator Mode Active! Auto-graded with ${chosenFilter.toUpperCase()} studio LUT & generated presentation slide ready for creators with zero editing!`;
+    setAiResponseText(msg);
+    speakText('Creator shot prepared with zero editing needed.');
+  };
+
 
 
   // REAL PHOTO CAPTURE & AUTO-DOWNLOAD ENGINE
@@ -565,6 +591,14 @@ export function PhoneExperience({ onGenerateSlide }) {
           }`}
         >
           <span>RAW Clean</span>
+        </button>
+
+        <button
+          onClick={() => executeCreatorZeroEditShot()}
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>⚡ Creator Zero-Edit</span>
         </button>
 
         <button
@@ -984,6 +1018,14 @@ export function PhoneExperience({ onGenerateSlide }) {
 
               {/* Camera Shortcut Chips — Direct Zero-Latency Execution */}
               <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-1">
+                <button
+                  onClick={() => executeCreatorZeroEditShot()}
+                  className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>⚡ Creator Zero-Edit</span>
+                </button>
+
                 <button
                   onClick={captureAndCachePhoto}
                   className="px-3 py-1.5 rounded-full bg-[#FFD600] text-black font-extrabold text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
