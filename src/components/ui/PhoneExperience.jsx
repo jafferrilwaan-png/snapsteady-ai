@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/audio';
 import { streamOpenRouterChat, AVAILABLE_MODELS, OPENROUTER_API_KEY } from '../../utils/aiService';
-import { getCachedPhotos, savePhotoToCache, deleteCachedPhoto, clearPhotoCache } from '../../utils/photoCache';
+import { getCachedPhotos, savePhotoToCache, deleteCachedPhoto, clearPhotoCache, downloadPhotoDirect } from '../../utils/photoCache';
 
 const OFFICIAL_IQOO_VIDEO = "https://in-exstatic-vivofs.vivo.com/gdHFRinHEMrj3yPG/product/1772089590124/zip/img/iqoo15r-screen-video1-lg.webm";
 
@@ -36,7 +36,7 @@ const CAMERA_FILTERS = [
   { id: 'cyber', name: 'Cyberpunk', css: 'hue-rotate(185deg) saturate(2.4) contrast(1.45)', desc: 'Electric neo-tokyo hue', badge: '⚡ CYBERPUNK' }
 ];
 
-export function PhoneExperience() {
+export function PhoneExperience({ onGenerateSlide }) {
   const [deviceTilt, setDeviceTilt] = useState({ x: 0, y: 0 });
   const [speechOutputEnabled, setSpeechOutputEnabled] = useState(true);
   const [viewMode, setViewMode] = useState('camera'); // 'camera' | 'partner_video'
@@ -265,16 +265,33 @@ export function PhoneExperience() {
     speakText(`Switched to ${nextFacing === 'user' ? 'front' : 'rear'} camera.`);
   };
 
-  const toggleTorchDirect = () => {
+  const triggerSlideGeneration = (topic) => {
     sound.playClick();
-    setTorchEnabled(!torchEnabled);
-    const msg = `💡 Torch ${!torchEnabled ? 'activated' : 'deactivated'}.`;
+    const prompt = topic || speechTranscript || 'SnapSteady On-Device Vision System';
+    const cleanTitle = prompt.length > 40 ? prompt.slice(0, 38) + '...' : prompt;
+    const newSlide = {
+      tag: "VOICE GENERATED SLIDE",
+      title: cleanTitle.toUpperCase(),
+      subtitle: `Presentation slide generated dynamically from voice pitch: "${prompt}".`,
+      bullets: [
+        { label: "Hardware Sensor Integration", desc: `Calibrated with real sensor feed: ${realVisionData.lux} LUX, ${zoomLevel}x zoom, ${activeFilter.toUpperCase()} filter.` },
+        { label: "Zero Cloud Latency", desc: "Local NPU and WebRTC vision pipeline delivering instant computational photography." },
+        { label: "Hackathon Impact", desc: "Transforms flagship mobile hardware into an autonomous vision assistant and presentation engine." }
+      ]
+    };
+
+    if (onGenerateSlide) {
+      onGenerateSlide(newSlide, prompt);
+    }
+
+    const msg = `📊 Generated new pitch slide for: "${cleanTitle}". Scroll down to view the presentation deck!`;
     setAiResponseText(msg);
-    speakText(`Torch ${!torchEnabled ? 'on' : 'off'}.`);
+    speakText(`Slide created for ${cleanTitle}`);
   };
 
-  // REAL PHOTO CAPTURE & CACHE ENGINE
-  const captureAndCachePhoto = () => {
+
+  // REAL PHOTO CAPTURE & AUTO-DOWNLOAD ENGINE
+  const captureAndCachePhoto = async () => {
     sound.playShutter();
     setCaptureFlash(true);
     setTimeout(() => setCaptureFlash(false), 260);
@@ -282,7 +299,7 @@ export function PhoneExperience() {
     const video = videoRef.current;
     let dataUrl = null;
 
-    if (video && video.readyState >= 2) {
+    if (video) {
       try {
         const snapCanvas = document.createElement('canvas');
         snapCanvas.width = video.videoWidth || 1280;
@@ -319,22 +336,27 @@ export function PhoneExperience() {
       dataUrl = snapCanvas.toDataURL('image/jpeg', 0.88);
     }
 
-    const saved = savePhotoToCache(dataUrl, {
+    // 1. Save to robust IndexedDB cache
+    const saved = await savePhotoToCache(dataUrl, {
       lux: realVisionData.lux,
       stability: realGyro.score,
       zoom: `${zoomLevel}x`,
       filter: activeFilter
     });
 
-    if (saved) {
-      const updatedList = getCachedPhotos();
-      setCachedPhotos(updatedList);
-      setCaptureToast(`Photo #${updatedList.length} Saved to Cache!`);
-      setTimeout(() => setCaptureToast(null), 3000);
-      const message = `📸 Photo saved to cache (${activeFilter.toUpperCase()} filter, ${zoomLevel}x zoom).`;
-      setAiResponseText(message);
-      speakText('Photo captured and stored in your cache.');
-    }
+    // 2. Instant Direct File Download to Computer / Phone Downloads folder
+    const filename = `snapsteady_${activeFilter}_${Date.now()}.jpg`;
+    downloadPhotoDirect(dataUrl, filename);
+
+    // 3. Update Gallery State & Toast
+    const updatedList = getCachedPhotos();
+    setCachedPhotos(updatedList);
+    setCaptureToast(`✅ Saved & Downloaded: ${filename}`);
+    setTimeout(() => setCaptureToast(null), 3500);
+
+    const message = `📸 Photo saved to cache & downloaded as ${filename} (${activeFilter.toUpperCase()} filter, ${zoomLevel}x zoom).`;
+    setAiResponseText(message);
+    speakText('Photo captured and downloaded.');
   };
 
   // NATURAL LANGUAGE AGENT PARSER
@@ -543,6 +565,13 @@ export function PhoneExperience() {
           }`}
         >
           <span>RAW Clean</span>
+        </button>
+
+        <button
+          onClick={() => triggerSlideGeneration()}
+          className="px-3.5 py-2 rounded-xl bg-purple-900/60 border border-purple-400/40 text-purple-200 text-xs font-bold hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>📊 Pitch Slide</span>
         </button>
 
         <button
@@ -1022,6 +1051,13 @@ export function PhoneExperience() {
                   }`}
                 >
                   💡 Torch
+                </button>
+
+                <button
+                  onClick={() => triggerSlideGeneration()}
+                  className="px-3 py-1.5 rounded-full bg-purple-900/80 border border-purple-400/40 text-purple-200 text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95 hover:bg-purple-600 hover:text-white"
+                >
+                  📊 Pitch Slide
                 </button>
 
                 <button

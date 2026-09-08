@@ -1,27 +1,60 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AetherHero } from './components/ui/aether-hero';
 import { ContainerScroll } from './components/ui/container-scroll-animation';
 import { PhoneExperience } from './components/ui/PhoneExperience';
+import { AISlideDeck } from './components/ui/AISlideDeck';
 import { CinematicFooter } from './components/ui/motion-footer';
 import { CloudShader } from './components/ui/cloud-shader';
 
+const INITIAL_SLIDES = [
+  {
+    tag: "iQOO HACKATHON 2026",
+    title: "SnapSteady AI — On-Device Vision Intelligence",
+    subtitle: "Eliminating motion blur and optimizing computational photography in real-time on flagship mobile hardware.",
+    bullets: [
+      { label: "Zero-Shake Optical Gyro", desc: "Monitors X/Y angular velocity at 120Hz to trigger the instant the frame is steady." },
+      { label: "On-Device Multimodal NPU", desc: "Runs quantized vision models locally with zero cloud latency and total privacy." },
+      { label: "Autonomous Voice Agent", desc: "Speak natural language commands to control zoom, filters, capture, and framing." }
+    ]
+  },
+  {
+    tag: "ARCHITECTURE & PIPELINE",
+    title: "Real-Time Pixel & Gyro Fusion Engine",
+    subtitle: "Combining browser hardware streams, 60fps canvas computer vision, and OpenRouter intelligence.",
+    bullets: [
+      { label: "WebRTC Video Stream", desc: "Pure uncompressed master sensor pipeline with front/rear lens switching." },
+      { label: "Canvas Pixel LUX Meter", desc: "Offscreen 2D context calculating real ambient brightness and daylight Kelvin." },
+      { label: "Pro LUT Color Pipeline", desc: "Hardware CSS & Canvas filters for Cinematic 35mm, Leica B&W, and Vivid HDR." }
+    ]
+  }
+];
+
 export default function SnapSteadyApp() {
+  const [slides, setSlides] = useState(INITIAL_SLIDES);
+  const [activeVoicePrompt, setActiveVoicePrompt] = useState('iQOO Flagship Vision Intelligence');
+
+  const handleNewVoiceSlide = (newSlideData, promptText) => {
+    if (newSlideData) {
+      setSlides([newSlideData, ...slides]);
+      setActiveVoicePrompt(promptText || 'Voice Pitch');
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#070e1c] text-white flex flex-col font-sans overflow-x-hidden selection:bg-[#FFD600]/30 selection:text-[#FFD600] relative">
       
       {/* 1. HERO SECTION: AetherHero with Prominent Visible Artwork & Glassmorphism */}
       <AetherHero
-        title="Make the impossible feel inevitable."
+        title="Give your big idea the vision it deserves."
         subtitle="SnapSteady AI — Flagship On-Device Vision Intelligence & Zero-Shake Optical Gyro Lock for the iQOO Hackathon."
         ctaLabel="Launch Live Viewfinder"
         ctaHref="#experience"
         secondaryCtaLabel="GitHub Repository"
-        secondaryCtaHref="https://github.com"
-        align="center"
+        secondaryCtaHref="https://github.com/jafferrilwaan-png/snapsteady-ai"
       />
 
       {/* 2. DEDICATED PHONE SECTION: Visible Crisp Living Artwork Background & Glassmorphic Title */}
-      <section className="relative w-full py-20 px-4 flex flex-col items-center overflow-hidden">
+      <section className="relative w-full py-20 px-4 flex flex-col items-center overflow-hidden" id="experience">
         {/* Living Artwork Background (Visible, Rich, Unblurred) */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div
@@ -55,12 +88,29 @@ export default function SnapSteadyApp() {
             </div>
           }
         >
-          {/* Live Interactive 3D Smartphone Experience */}
-          <PhoneExperience />
+          {/* Live Interactive 3D Smartphone Experience with Live Slide Dispatch */}
+          <PhoneExperience onGenerateSlide={handleNewVoiceSlide} />
         </ContainerScroll>
+
+        {/* 3. LIVE AI GENERATED SLIDE DECK (Created directly from your voice) */}
+        <div className="relative z-20 w-full max-w-5xl px-4 mt-12">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FFD600]/10 border border-[#FFD600]/30 text-xs font-mono text-[#FFD600] mb-2">
+              <span>VOICE-DRIVEN AI SLIDE DECK</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white">
+              Live Presentation Slides Generated from What You Say
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-300 max-w-lg mx-auto">
+              Speak to the AI camera above to dynamically generate pitch slides matching your spoken topic.
+            </p>
+          </div>
+
+          <AISlideDeck slides={slides} currentPrompt={activeVoicePrompt} />
+        </div>
       </section>
 
-      {/* 3. CINEMATIC FOOTER */}
+      {/* 4. CINEMATIC FOOTER */}
       <CinematicFooter />
 
     </div>
