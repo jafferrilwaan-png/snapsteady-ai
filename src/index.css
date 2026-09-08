@@ -180,18 +180,13 @@
   100% { opacity: 0; }
 }
 
-.flash-active {
-  animation: flashEffect 0.35s ease-out forwards;
+/* Progress Bar Shrink Animation for Auto-Dismiss */
+@keyframes shrinkProgress {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
+.animate-shrink-progress {
+  animation: shrinkProgress 6.5s linear forwards;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
-}
+

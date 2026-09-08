@@ -18,13 +18,116 @@ import {
   Send,
   Sliders,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Layers,
+  Pin,
+  ExternalLink,
+  Tv,
+  Play
 } from 'lucide-react';
 import { sound } from '../../utils/audio';
 import { streamOpenRouterChat, AVAILABLE_MODELS, OPENROUTER_API_KEY } from '../../utils/aiService';
 import { getCachedPhotos, savePhotoToCache, deleteCachedPhoto, clearPhotoCache, downloadPhotoDirect } from '../../utils/photoCache';
 
 const OFFICIAL_IQOO_VIDEO = "https://in-exstatic-vivofs.vivo.com/gdHFRinHEMrj3yPG/product/1772089590124/zip/img/iqoo15r-screen-video1-lg.webm";
+
+// Real-Time Creator B-Roll Edit Graphic Overlays
+export const BROLL_PRESETS = [
+  {
+    id: 'amazon',
+    keywords: ['amazon', 'aws', 'prime', 'delivery', 'ecommerce', 'shopping', 'package'],
+    title: 'Amazon Prime Delivery',
+    category: '📦 E-COMMERCE & CLOUD',
+    badge: 'AMAZON PRIME AI',
+    accentColor: '#FF9900',
+    stats: 'Global Fast Track · Cloud Logistics',
+    image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80',
+    description: 'Instant auto-edit graphic: E-commerce logistics & delivery network.'
+  },
+  {
+    id: 'apple',
+    keywords: ['apple', 'iphone', 'mac', 'macbook', 'ios', 'bionic', 'ipad'],
+    title: 'Apple Cupertino Silicon',
+    category: '🍎 NEURAL HARDWARE',
+    badge: 'A18 PRO BIONIC',
+    accentColor: '#00D2FF',
+    stats: 'Neural Engine 35 TOPS · Metal 3 GPU',
+    image: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=600&q=80',
+    description: 'Hardware raytracing & on-device Neural Engine architecture.'
+  },
+  {
+    id: 'iqoo',
+    keywords: ['iqoo', 'iqoo 15', 'vivo', 'snapdragon', 'q2', 'monster'],
+    title: 'iQOO 15R Monster Engine',
+    category: '⚡ SNAPDRAGON 8 ELITE',
+    badge: 'IQOO SUPERCOMPUTING Q2',
+    accentColor: '#FFD600',
+    stats: '144 FPS Ray Tracing · VC Liquid Cooling',
+    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80',
+    description: 'Dual-chip flagship: Snapdragon 8 Elite + Supercomputing Q2.'
+  },
+  {
+    id: 'google',
+    keywords: ['google', 'gemini', 'ai', 'artificial intelligence', 'neural', 'deepmind'],
+    title: 'Google Gemini 2.0 Vision',
+    category: '🧠 MULTIMODAL AI AGENT',
+    badge: 'GEMINI 2.0 FLASH',
+    accentColor: '#4285F4',
+    stats: 'Multimodal Video Processing · 0-Latency Vision',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&w=600&q=80',
+    description: 'Real-time contextual visual understanding for live camera feeds.'
+  },
+  {
+    id: 'sony',
+    keywords: ['sony', 'camera', 'lens', 'alpha', 'shutter', 'cinematic', 'dslr', 'optics'],
+    title: 'Sony G-Master 35mm f/1.4',
+    category: '📷 FULL-FRAME OPTICS',
+    badge: 'SONY G-MASTER SENSOR',
+    accentColor: '#FF5722',
+    stats: 'f/1.4 Fast Aperture · 4K 120fps Cinema',
+    image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80',
+    description: 'Pro cinema optical glass with real-time computational LUT grading.'
+  },
+  {
+    id: 'tesla',
+    keywords: ['tesla', 'ev', 'electric', 'car', 'cyber', 'autopilot', 'robotics'],
+    title: 'Tesla Cyber Autonomous',
+    category: '🚗 AUTOPILOT COMPUTE',
+    badge: 'TESLA FSD V12',
+    accentColor: '#E82127',
+    stats: 'Vision-Only AI · 360° Surround Sensing',
+    image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=600&q=80',
+    description: 'End-to-end neural network spatial intelligence and autonomous compute.'
+  },
+  {
+    id: 'youtube',
+    keywords: ['youtube', 'creator', 'stream', 'video', 'content', 'vlog', 'editing'],
+    title: 'YouTube 4K Studio Stream',
+    category: '🎥 4K HDR CREATOR',
+    badge: 'STUDIO LIVE OVERLAY',
+    accentColor: '#FF0000',
+    stats: 'Live B-Roll Auto-Sync · Zero Manual Editing',
+    image: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=600&q=80',
+    description: 'Live video auto-editing with speech-driven graphical pop-ups.'
+  },
+  {
+    id: 'hackathon',
+    keywords: ['hackathon', 'winner', 'trophy', 'prize', 'competition', 'project', 'iQOO'],
+    title: 'iQOO Hackathon 2026',
+    category: '🏆 FIRST PRIZE INNOVATION',
+    badge: 'SNAPSTEADY AI PROTOTYPE',
+    accentColor: '#FFD600',
+    stats: 'On-Device AI Camera · Multi-Agent Architecture',
+    image: 'https://images.unsplash.com/photo-1528605248659-1440064c2496?auto=format&fit=crop&w=600&q=80',
+    description: 'Grand prize contender: Next-generation AI camera agent for creators.'
+  }
+];
+
+const RELIABLE_CAMERA_VIDEOS = [
+  "https://assets.mixkit.co/videos/preview/mixkit-futuristic-city-with-neon-lights-and-flying-cars-42525-large.mp4",
+  "https://in-exstatic-vivofs.vivo.com/gdHFRinHEMrj3yPG/product/1772089590124/zip/img/iqoo15r-screen-video1-lg.webm",
+  "https://assets.mixkit.co/videos/preview/mixkit-cyber-city-with-neon-lights-and-skyscrapers-42526-large.mp4"
+];
 
 // High-impact live camera visual filters
 const CAMERA_FILTERS = [
@@ -52,6 +155,13 @@ export function PhoneExperience({ onGenerateSlide }) {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [textCommand, setTextCommand] = useState('');
   const [cameraError, setCameraError] = useState(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [currentVideoSrc, setCurrentVideoSrc] = useState(RELIABLE_CAMERA_VIDEOS[0]);
+
+  // Live Video AR / AI B-Roll Auto-Edit Overlay State
+  const [activeBrollOverlay, setActiveBrollOverlay] = useState(null);
+  const [brollAutoDismissTimer, setBrollAutoDismissTimer] = useState(null);
+  const [isBrollPinned, setIsBrollPinned] = useState(false);
 
   const [realVisionData, setRealVisionData] = useState({
     lux: 420,
@@ -67,7 +177,7 @@ export function PhoneExperience({ onGenerateSlide }) {
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [aiResponseText, setAiResponseText] = useState(
-    '🤖 Vision Agent online. Click "Snap Photo", "Cinematic LUT", "B&W Film", or "Vivid HDR".'
+    '🤖 Vision Agent online. Speak any concept (e.g. "Amazon", "Apple", "iQOO", "Sony") or click B-Roll chips to pop up instant video edit overlays!'
   );
 
   const videoRef = useRef(null);
@@ -102,6 +212,15 @@ export function PhoneExperience({ onGenerateSlide }) {
           currentTranscript += event.results[i][0].transcript;
         }
         setSpeechTranscript(currentTranscript);
+
+        // Instant Real-Time Keyword Trigger as Creator Speaks!
+        const lower = currentTranscript.toLowerCase();
+        for (const preset of BROLL_PRESETS) {
+          if (preset.keywords.some((kw) => lower.includes(kw))) {
+            triggerBrollDirect(preset);
+            break;
+          }
+        }
       };
 
       recognition.onerror = (err) => {
@@ -117,6 +236,50 @@ export function PhoneExperience({ onGenerateSlide }) {
     }
   }, []);
 
+  // Trigger Live Video AR / AI B-Roll Auto-Edit Overlay
+  const triggerBrollDirect = (presetOrKeyword, customTopic = null) => {
+    sound.playLockChime();
+
+    let matchedPreset = null;
+    if (typeof presetOrKeyword === 'object' && presetOrKeyword?.id) {
+      matchedPreset = presetOrKeyword;
+    } else {
+      const query = (presetOrKeyword || customTopic || '').toLowerCase().trim();
+      matchedPreset = BROLL_PRESETS.find((p) => p.keywords.some((kw) => query.includes(kw)));
+
+      if (!matchedPreset && query) {
+        // Dynamic Creator Concept Generator for any unlisted topic
+        matchedPreset = {
+          id: 'custom-' + Date.now(),
+          keywords: [query],
+          title: query.toUpperCase(),
+          category: '✨ DYNAMIC CREATOR B-ROLL',
+          badge: 'AI LIVE VIDEO OVERLAY',
+          accentColor: '#FFD600',
+          stats: `Speech Tracked · "${query}"`,
+          image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
+          description: `Auto-generated live video edit graphic for: "${query}".`
+        };
+      }
+    }
+
+    if (matchedPreset) {
+      setActiveBrollOverlay(matchedPreset);
+      const msg = `🎬 Video Auto-Edit: Displaying "${matchedPreset.title}" B-Roll graphic card overlay on live video!`;
+      setAiResponseText(msg);
+      speakText(`${matchedPreset.title} overlay active.`);
+
+      // Auto-dismiss after 6.5 seconds unless pinned
+      if (brollAutoDismissTimer) clearTimeout(brollAutoDismissTimer);
+      const timer = setTimeout(() => {
+        if (!isBrollPinned) {
+          setActiveBrollOverlay(null);
+        }
+      }, 6500);
+      setBrollAutoDismissTimer(timer);
+    }
+  };
+
   const speakText = (text) => {
     if (!speechOutputEnabled || !('speechSynthesis' in window)) return;
     try {
@@ -130,7 +293,7 @@ export function PhoneExperience({ onGenerateSlide }) {
     }
   };
 
-  // Hardware Camera stream initialization with graceful simulation fallback
+  // Hardware Camera stream initialization with guaranteed non-black fallback
   useEffect(() => {
     let stream = null;
     let isCancelled = false;
@@ -151,22 +314,29 @@ export function PhoneExperience({ onGenerateSlide }) {
             setCameraError(null);
             if (videoRef.current) {
               videoRef.current.srcObject = s;
-              videoRef.current.play().catch(() => {});
+              videoRef.current.play().then(() => setVideoLoaded(true)).catch(() => {});
             }
           })
           .catch((err) => {
-            console.warn('Webcam busy, playing active simulation feed:', err);
-            setCameraError('Webcam busy — playing live video stream');
+            console.warn('Webcam not active or permission pending, loading active video stream:', err);
+            setCameraError('Live Video Stream Active');
             if (videoRef.current) {
               videoRef.current.srcObject = null;
-              videoRef.current.src = OFFICIAL_IQOO_VIDEO;
-              videoRef.current.play().catch(() => {});
+              videoRef.current.src = currentVideoSrc;
+              videoRef.current.play().then(() => setVideoLoaded(true)).catch(() => {});
             }
           });
       } else {
         if (videoRef.current) {
-          videoRef.current.src = OFFICIAL_IQOO_VIDEO;
+          videoRef.current.src = currentVideoSrc;
+          videoRef.current.play().then(() => setVideoLoaded(true)).catch(() => {});
         }
+      }
+    } else {
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.src = currentVideoSrc;
+        videoRef.current.play().then(() => setVideoLoaded(true)).catch(() => {});
       }
     }
 
@@ -176,7 +346,7 @@ export function PhoneExperience({ onGenerateSlide }) {
         stream.getTracks().forEach((t) => t.stop());
       }
     };
-  }, [facingMode, viewMode]);
+  }, [facingMode, viewMode, currentVideoSrc]);
 
   // Real-time Canvas Computer Vision telemetry
   useEffect(() => {
@@ -471,6 +641,19 @@ export function PhoneExperience({ onGenerateSlide }) {
       return;
     }
 
+    // Check if user is asking for or talking about a B-Roll concept (e.g., "amazon", "apple", "iqoo", "sony")
+    const matchedBroll = BROLL_PRESETS.find((p) => p.keywords.some((kw) => text.includes(kw)));
+    if (matchedBroll) {
+      triggerBrollDirect(matchedBroll);
+      return;
+    }
+
+    if (text.startsWith('show ') || text.startsWith('broll ') || text.startsWith('overlay ') || text.startsWith('explain ')) {
+      const topic = text.replace(/^(show|broll|overlay|explain)\s+/i, '');
+      triggerBrollDirect(null, topic);
+      return;
+    }
+
     // Live AI Vision Stream via OpenRouter
     setIsAiThinking(true);
     setAiResponseText('⚡ AI Agent analyzing live visual stream...');
@@ -540,84 +723,110 @@ export function PhoneExperience({ onGenerateSlide }) {
       <canvas ref={canvasRef} className="hidden" />
 
       {/* MASTER EXTERNAL CONTROL DECK (Always 100% accessible) */}
-      <div className="w-full max-w-2xl mb-5 flex flex-wrap items-center justify-center gap-2 p-3 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/20 shadow-2xl z-40">
-        <button
-          onClick={captureAndCachePhoto}
-          className="px-4 py-2 rounded-xl bg-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <Camera className="w-4 h-4" />
-          <span>Snap Photo</span>
-        </button>
+      <div className="w-full max-w-2xl mb-4 flex flex-col gap-2 p-3 rounded-2xl bg-black/85 backdrop-blur-2xl border border-white/20 shadow-2xl z-40">
+        {/* Row 1: Primary Shutter & LUT Controls */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            onClick={captureAndCachePhoto}
+            className="px-4 py-2 rounded-xl bg-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Camera className="w-4 h-4" />
+            <span>Snap Photo</span>
+          </button>
 
-        <button
-          onClick={() => setFilterDirect('cinematic')}
-          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-            activeFilter === 'cinematic'
-              ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
-              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
-          }`}
-        >
-          <span>🎬 Cinematic LUT</span>
-        </button>
+          <button
+            onClick={() => setFilterDirect('cinematic')}
+            className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+              activeFilter === 'cinematic'
+                ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+                : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+            }`}
+          >
+            <span>🎬 Cinematic</span>
+          </button>
 
-        <button
-          onClick={() => setFilterDirect('bw')}
-          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-            activeFilter === 'bw'
-              ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
-              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
-          }`}
-        >
-          <span>🕶️ B&W Film</span>
-        </button>
+          <button
+            onClick={() => setFilterDirect('bw')}
+            className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+              activeFilter === 'bw'
+                ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+                : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+            }`}
+          >
+            <span>🕶️ B&W Film</span>
+          </button>
 
-        <button
-          onClick={() => setFilterDirect('vivid')}
-          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-            activeFilter === 'vivid'
-              ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
-              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
-          }`}
-        >
-          <span>🎨 Vivid HDR</span>
-        </button>
+          <button
+            onClick={() => setFilterDirect('vivid')}
+            className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+              activeFilter === 'vivid'
+                ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-lg shadow-[#FFD600]/40'
+                : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+            }`}
+          >
+            <span>🎨 Vivid HDR</span>
+          </button>
 
-        <button
-          onClick={() => setFilterDirect('none')}
-          className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-            activeFilter === 'none'
-              ? 'bg-[#FFD600] text-black border-[#FFD600]'
-              : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
-          }`}
-        >
-          <span>RAW Clean</span>
-        </button>
+          <button
+            onClick={() => setFilterDirect('none')}
+            className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+              activeFilter === 'none'
+                ? 'bg-[#FFD600] text-black border-[#FFD600]'
+                : 'bg-neutral-900 border-white/20 text-neutral-200 hover:border-[#FFD600]'
+            }`}
+          >
+            <span>RAW</span>
+          </button>
 
-        <button
-          onClick={() => executeCreatorZeroEditShot()}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>⚡ Creator Zero-Edit</span>
-        </button>
+          <button
+            onClick={() => executeCreatorZeroEditShot()}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>⚡ Creator Auto-Edit</span>
+          </button>
 
-        <button
-          onClick={() => triggerSlideGeneration()}
-          className="px-3.5 py-2 rounded-xl bg-purple-900/60 border border-purple-400/40 text-purple-200 text-xs font-bold hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>📊 Pitch Slide</span>
-        </button>
+          <button
+            onClick={() => triggerSlideGeneration()}
+            className="px-3 py-2 rounded-xl bg-purple-900/60 border border-purple-400/40 text-purple-200 text-xs font-bold hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>📊 Pitch Slide</span>
+          </button>
 
-        <button
-          onClick={() => {
-            sound.playClick();
-            setShowGallery(!showGallery);
-          }}
-          className="px-3.5 py-2 rounded-xl bg-neutral-900 border border-white/20 text-[#FFD600] text-xs font-bold hover:border-[#FFD600] transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <ImageIcon className="w-3.5 h-3.5" />
-          <span>Gallery ({cachedPhotos.length})</span>
-        </button>
+          <button
+            onClick={() => {
+              sound.playClick();
+              setShowGallery(!showGallery);
+            }}
+            className="px-3 py-2 rounded-xl bg-neutral-900 border border-white/20 text-[#FFD600] text-xs font-bold hover:border-[#FFD600] transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>Gallery ({cachedPhotos.length})</span>
+          </button>
+        </div>
+
+        {/* Row 2: Live AI Video B-Roll Auto-Edit Overlays Tray (Instant Pop-Ups) */}
+        <div className="flex items-center gap-1.5 pt-1 border-t border-white/10 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-[#FFD600] shrink-0 pl-1">
+            <Tv className="w-3.5 h-3.5 animate-pulse" />
+            <span>AI B-ROLL OVERLAYS:</span>
+          </div>
+
+          {BROLL_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => triggerBrollDirect(preset)}
+              className={`px-2.5 py-1 rounded-lg border text-[11px] font-mono font-bold transition-all shrink-0 cursor-pointer active:scale-95 flex items-center gap-1 ${
+                activeBrollOverlay?.id === preset.id
+                  ? 'bg-[#FFD600] text-black border-[#FFD600] shadow-md shadow-[#FFD600]/30'
+                  : 'bg-neutral-900/90 border-white/15 text-neutral-200 hover:border-[#FFD600]'
+              }`}
+            >
+              <span>{preset.category.split(' ')[0]}</span>
+              <span>{preset.title.split(' ')[0]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Floating Mode Controls */}
@@ -725,7 +934,14 @@ export function PhoneExperience({ onGenerateSlide }) {
           </div>
 
           {/* Edge-to-Edge Viewport with Filter applied to entire container */}
-          <div className="relative w-full h-full bg-black overflow-hidden flex flex-col justify-between">
+          <div className="relative w-full h-full bg-[#07090e] overflow-hidden flex flex-col justify-between">
+            {/* Animated Cyber Sensor Fallback Scene (Ensures Screen Is Never Black) */}
+            <div className="absolute inset-0 z-0 bg-gradient-to-br from-neutral-950 via-[#0d131f] to-neutral-900 flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,214,0,0.15),transparent_70%)] animate-pulse" />
+              <div className="camera-grid absolute inset-0 opacity-40" />
+              <div className="w-64 h-64 rounded-full border border-[#FFD600]/20 animate-ring-spin" />
+            </div>
+
             <div
               style={{
                 filter: currentFilterObj.css,
@@ -741,6 +957,19 @@ export function PhoneExperience({ onGenerateSlide }) {
                     playsInline
                     loop
                     muted
+                    crossOrigin="anonymous"
+                    onLoadedData={() => setVideoLoaded(true)}
+                    onError={() => {
+                      console.warn('Video stream error, switching to backup CDN stream');
+                      if (videoRef.current) {
+                        videoRef.current.srcObject = null;
+                        const nextIdx = (RELIABLE_CAMERA_VIDEOS.indexOf(currentVideoSrc) + 1) % RELIABLE_CAMERA_VIDEOS.length;
+                        const nextSrc = RELIABLE_CAMERA_VIDEOS[nextIdx];
+                        setCurrentVideoSrc(nextSrc);
+                        videoRef.current.src = nextSrc;
+                        videoRef.current.play().catch(() => {});
+                      }
+                    }}
                     style={{
                       transform: `${facingMode === 'user' && !videoRef.current?.src ? 'scaleX(-1)' : ''} scale(${zoomLevel})`,
                       transformOrigin: 'center center',
@@ -752,11 +981,16 @@ export function PhoneExperience({ onGenerateSlide }) {
                 </>
               ) : (
                 <video
-                  src={OFFICIAL_IQOO_VIDEO}
+                  src={currentVideoSrc}
                   autoPlay
                   loop
                   playsInline
                   muted
+                  crossOrigin="anonymous"
+                  onError={() => {
+                    const nextIdx = (RELIABLE_CAMERA_VIDEOS.indexOf(currentVideoSrc) + 1) % RELIABLE_CAMERA_VIDEOS.length;
+                    setCurrentVideoSrc(RELIABLE_CAMERA_VIDEOS[nextIdx]);
+                  }}
                   className="w-full h-full object-cover"
                 />
               )}
@@ -852,8 +1086,107 @@ export function PhoneExperience({ onGenerateSlide }) {
               </div>
             )}
 
+            {/* LIVE AR / AI B-ROLL AUTO-EDIT VIDEO OVERLAY CARD */}
+            {activeBrollOverlay && !showGallery && (
+              <div className="absolute top-24 left-3 right-3 z-40 animate-in slide-in-from-top-4 fade-in duration-300">
+                <div
+                  style={{
+                    boxShadow: `0 0 35px ${activeBrollOverlay.accentColor || '#FFD600'}50, inset 0 0 15px rgba(255,255,255,0.05)`,
+                    borderColor: `${activeBrollOverlay.accentColor || '#FFD600'}90`
+                  }}
+                  className="rounded-2xl bg-black/92 backdrop-blur-2xl border-2 p-3 text-white shadow-2xl flex flex-col gap-2 relative overflow-hidden"
+                >
+                  {/* Top Live Edit Banner */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                      <span
+                        style={{ color: activeBrollOverlay.accentColor || '#FFD600' }}
+                        className="text-[10px] font-mono font-black tracking-wider uppercase"
+                      >
+                        {activeBrollOverlay.category}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setIsBrollPinned(!isBrollPinned)}
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-mono flex items-center gap-1 transition-all cursor-pointer ${
+                          isBrollPinned
+                            ? 'bg-[#FFD600] text-black font-bold'
+                            : 'bg-white/10 text-neutral-300 hover:text-white'
+                        }`}
+                        title={isBrollPinned ? 'Overlay Pinned' : 'Pin Overlay'}
+                      >
+                        <Pin className="w-2.5 h-2.5" />
+                        <span>{isBrollPinned ? 'PINNED' : 'PIN'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveBrollOverlay(null)}
+                        className="p-1 rounded-md bg-white/10 text-neutral-300 hover:text-white hover:bg-white/20 transition-all cursor-pointer"
+                        title="Dismiss"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Main Media & Concept Split */}
+                  <div className="flex gap-2.5 items-center">
+                    <div className="w-20 h-16 rounded-xl overflow-hidden bg-neutral-900 border border-white/20 shrink-0 relative group">
+                      <img
+                        src={activeBrollOverlay.image}
+                        alt={activeBrollOverlay.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      <span className="absolute bottom-0.5 left-1 px-1 py-0.2 rounded bg-black/80 text-[7.5px] font-mono text-[#FFD600]">
+                        B-ROLL
+                      </span>
+                    </div>
+
+                    <div className="flex-1 flex flex-col justify-between overflow-hidden">
+                      <div>
+                        <h4 className="font-extrabold text-xs text-white truncate tracking-wide">
+                          {activeBrollOverlay.title}
+                        </h4>
+                        <p className="text-[9.5px] text-neutral-300 line-clamp-2 leading-tight mt-0.5">
+                          {activeBrollOverlay.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/10">
+                        <span className="text-[8.5px] font-mono text-neutral-400 truncate max-w-[120px]">
+                          {activeBrollOverlay.stats}
+                        </span>
+                        <button
+                          onClick={() => triggerSlideGeneration(activeBrollOverlay.title)}
+                          className="px-2 py-0.5 rounded bg-purple-900/80 border border-purple-400/40 text-purple-200 hover:bg-purple-600 hover:text-white text-[8.5px] font-mono font-bold transition-all shrink-0 cursor-pointer"
+                        >
+                          + Slide
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Auto-Dismiss Countdown Indicator */}
+                  {!isBrollPinned && (
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        style={{
+                          backgroundColor: activeBrollOverlay.accentColor || '#FFD600'
+                        }}
+                        className="h-full w-full animate-shrink-progress"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Gyro Stability Radar */}
-            {viewMode === 'camera' && !showGallery && !showFilterDrawer && (
+            {viewMode === 'camera' && !showGallery && !showFilterDrawer && !activeBrollOverlay && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                 <div
                   className={`relative w-32 h-32 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
@@ -1016,14 +1349,49 @@ export function PhoneExperience({ onGenerateSlide }) {
                 </p>
               </div>
 
-              {/* Camera Shortcut Chips — Direct Zero-Latency Execution */}
+              {/* Camera & B-Roll Shortcut Chips — Direct Zero-Latency Execution */}
               <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-1">
                 <button
                   onClick={() => executeCreatorZeroEditShot()}
                   className="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FFD600] text-black font-black text-xs shadow-lg shadow-[#FFD600]/30 hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer flex items-center gap-1"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>⚡ Creator Zero-Edit</span>
+                  <span>⚡ Creator Auto-Edit</span>
+                </button>
+
+                <button
+                  onClick={() => triggerBrollDirect('amazon')}
+                  className="px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-bold text-xs hover:bg-amber-500 hover:text-black transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  📦 Amazon B-Roll
+                </button>
+
+                <button
+                  onClick={() => triggerBrollDirect('apple')}
+                  className="px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-bold text-xs hover:bg-cyan-500 hover:text-black transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  🍎 Apple B-Roll
+                </button>
+
+                <button
+                  onClick={() => triggerBrollDirect('iqoo')}
+                  className="px-3 py-1.5 rounded-full bg-[#FFD600]/20 border border-[#FFD600] text-[#FFD600] font-bold text-xs hover:bg-[#FFD600] hover:text-black transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  ⚡ iQOO 15R
+                </button>
+
+                <button
+                  onClick={() => triggerBrollDirect('google')}
+                  className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-400 text-blue-300 font-bold text-xs hover:bg-blue-500 hover:text-black transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  🧠 Google AI
+                </button>
+
+                <button
+                  onClick={() => triggerBrollDirect('sony')}
+                  className="px-3 py-1.5 rounded-full bg-orange-500/20 border border-orange-400 text-orange-300 font-bold text-xs hover:bg-orange-500 hover:text-black transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  📷 Sony Lens
                 </button>
 
                 <button
