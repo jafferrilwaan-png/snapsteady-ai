@@ -435,6 +435,15 @@ export function PhoneExperience({ onGenerateSlide }) {
     speakText(`Switched to ${nextFacing === 'user' ? 'front' : 'rear'} camera.`);
   };
 
+  const toggleTorchDirect = () => {
+    sound.playClick();
+    const next = !torchEnabled;
+    setTorchEnabled(next);
+    const msg = `💡 Torch ${next ? 'enabled' : 'disabled'}.`;
+    setAiResponseText(msg);
+    speakText(`Torch ${next ? 'on' : 'off'}`);
+  };
+
   const triggerSlideGeneration = (topic) => {
     sound.playClick();
     const prompt = topic || speechTranscript || 'SnapSteady On-Device Vision System';
